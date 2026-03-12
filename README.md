@@ -5,6 +5,7 @@
 
 전체 강의 목차
 1. Fundamentals of Reinforcement Learning
-2. Sample-based Learning Methods
-3. Prediction and Control with Function Approximation
-4. A Complete Reinforcement Learning System (Capstone)
+    [강화_학습의_기초](./강화학습의_기초)
+3. Sample-based Learning Methods
+4. Prediction and Control with Function Approximation
+5. A Complete Reinforcement Learning System (Capstone)
