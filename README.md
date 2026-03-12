@@ -6,7 +6,7 @@
 
 전체 강의 목차
 1. Fundamentals of Reinforcement Learning
-    [강화_학습의_기초](./강화학습의_기초)
+   (./1. 강화학습의 기초)
 3. Sample-based Learning Methods
 4. Prediction and Control with Function Approximation
 5. A Complete Reinforcement Learning System (Capstone)
