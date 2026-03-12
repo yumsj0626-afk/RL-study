@@ -1,4 +1,4 @@
-# Rl-study
+# RL-study
 파란학기 강화학습 공부, 과제 내용을 정리합니다. 
 
 강의 정보 (Coursera_RL)
