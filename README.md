@@ -11,15 +11,14 @@
 레포지토리 구조 (Repository Structure)
 각 폴더에는 주차별 강의 노트(Markdown)와 실습 코드(Python/Jupyter)가 포함되어 있습니다.
 
-* `📂 1. 강화학습의 기초/` : Multi-armed Bandit, MDP 등 기초 이론 및 수식 정리
-* `📂 2. 샘플기반 학습 방법/` : Monte Carlo, TD Learning 구현 실습
-* `📂 3. 함수 근사치를 사용한 예측 및 제어/` : Function Approximation 적용 실습
-* `📂 4. 강화학습 시스템(캡스톤)/` : 배운 내용을 종합한 최종 프로젝트 코드 및 결과 보고서
+* `1. 강화학습의 기초/` : Multi-armed Bandit, MDP 등 기초 이론 및 수식 정리
+* `2. 샘플기반 학습 방법/` : Monte Carlo, TD Learning 구현 실습
+* `3. 함수 근사치를 사용한 예측 및 제어/` : Function Approximation 적용 실습
+* `4. 강화학습 시스템(캡스톤)/` : 배운 내용을 종합한 최종 프로젝트 코드 및 결과 보고서
 
 
 전체 강의 목차
 1. Fundamentals of Reinforcement Learning
-   (./1. 강화학습의 기초)
 3. Sample-based Learning Methods
 4. Prediction and Control with Function Approximation
 5. A Complete Reinforcement Learning System (Capstone)
