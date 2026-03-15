@@ -15,9 +15,13 @@
 * `2. 샘플기반 학습 방법/` : Monte Carlo, TD Learning 구현 실습
 * `3. 함수 근사치를 사용한 예측 및 제어/` : Function Approximation 적용 실습
 * `4. 강화학습 시스템(캡스톤)/` : 배운 내용을 종합한 최종 프로젝트 코드 및 결과 보고서
+---
+
+강의 정보 (Coursera_RL)
+: https://www.coursera.org/my-learning?myLearningTab=IN_PROGRESS 
 
 
-전체 강의 목차
+강의목
 1. Fundamentals of Reinforcement Learning
 3. Sample-based Learning Methods
 4. Prediction and Control with Function Approximation
