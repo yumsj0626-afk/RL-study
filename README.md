@@ -21,11 +21,11 @@
 : https://www.coursera.org/my-learning?myLearningTab=IN_PROGRESS 
 
 
-강의목
+강의목차
 1. Fundamentals of Reinforcement Learning
-3. Sample-based Learning Methods
-4. Prediction and Control with Function Approximation
-5. A Complete Reinforcement Learning System (Capstone)
+2. Sample-based Learning Methods
+3. Prediction and Control with Function Approximation
+4. A Complete Reinforcement Learning System (Capstone)
 
 
 개발 및 실습 환경 (Environment)
