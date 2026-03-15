@@ -3,10 +3,7 @@
 * **학습 동기:** 최근 AI 기술 중 자율주행이나 게임 AI에 핵심이 되는 강화학습에 흥미를 느껴, 이론적 이해를 넘어 실제 구현 능력을 기르기 위해 본 과정을 시작했습니다.
 * **최종 목표:** 기초적인 MDP 모델부터 딥러닝을 결합한 심층 강화학습까지의 이론과 강의 과제를 완벽히 숙지하고, 최종 프로젝트를 통해 나만의 강화학습 에이전트를 구현한다.
 
----
 
-강의 정보 (Coursera_RL)
-: https://www.coursera.org/my-learning?myLearningTab=IN_PROGRESS 
 - ---
 레포지토리 구조 (Repository Structure)
 각 폴더에는 주차별 강의 노트(Markdown)와 실습 코드(Python/Jupyter)가 포함되어 있습니다.
