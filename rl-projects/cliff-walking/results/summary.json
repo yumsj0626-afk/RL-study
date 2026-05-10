@@ -1,0 +1,38 @@
+{
+  "SARSA_eps_0.01": {
+    "mean_return_last_100": -18.13,
+    "min_return_last_100": -127.0,
+    "max_return_last_100": -14.0,
+    "note": ""
+  },
+  "Q-learning_eps_0.01": {
+    "mean_return_last_100": -15.5,
+    "min_return_last_100": -121.0,
+    "max_return_last_100": -12.0,
+    "note": "Q-learning update uses off-policy Bellman backup with max action-value."
+  },
+  "SARSA_eps_0.1": {
+    "mean_return_last_100": -26.11,
+    "min_return_last_100": -135.0,
+    "max_return_last_100": -16.0,
+    "note": ""
+  },
+  "Q-learning_eps_0.1": {
+    "mean_return_last_100": -56.29,
+    "min_return_last_100": -334.0,
+    "max_return_last_100": -12.0,
+    "note": "Q-learning update uses off-policy Bellman backup with max action-value."
+  },
+  "SARSA_eps_0.3": {
+    "mean_return_last_100": -52.08,
+    "min_return_last_100": -259.0,
+    "max_return_last_100": -16.0,
+    "note": ""
+  },
+  "Q-learning_eps_0.3": {
+    "mean_return_last_100": -227.39,
+    "min_return_last_100": -1649.0,
+    "max_return_last_100": -12.0,
+    "note": "Q-learning update uses off-policy Bellman backup with max action-value."
+  }
+}

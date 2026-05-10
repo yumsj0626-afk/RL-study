@@ -1,0 +1,18 @@
+{
+  "grid_size": [
+    8,
+    8
+  ],
+  "start": [
+    0,
+    0
+  ],
+  "goal": [
+    7,
+    7
+  ],
+  "obstacles": [],
+  "soft_avoid": [],
+  "preference": "shortest",
+  "interpretation_notes": "오른쪽 아래 구석을 (7,7)로 해석하고, '가장 짧게'는 preference=shortest로 해석"
+}

@@ -1,0 +1,12 @@
+[
+  {"id": "T01", "command": "오른쪽 아래 구석으로 가", "expected_category": "clear"},
+  {"id": "T02", "command": "(7,7)로 가는데 (4,4) 주변은 피해", "expected_category": "constrained"},
+  {"id": "T03", "command": "안전하게 목표까지", "expected_category": "ambiguous"},
+  {"id": "T04", "command": "빠르게 가", "expected_category": "underspecified"},
+  {"id": "T05", "command": "왼쪽 위로 가되 가운데 칸은 절대 피해", "expected_category": "clear_hard"},
+  {"id": "T06", "command": "(0,7)로 가고 가장 짧게 가", "expected_category": "clear_pref"},
+  {"id": "T07", "command": "오른쪽 아래 구석으로 가고 (3,3)~(3,5) 라인은 위험해", "expected_category": "constrained_soft"},
+  {"id": "T08", "command": "장애물 없이 목표까지", "expected_category": "underspecified"},
+  {"id": "T09", "command": "(5,5)에서 출발해서 (0,0)까지 안전하게", "expected_category": "clear_with_start"},
+  {"id": "T10", "command": "가운데로 가", "expected_category": "ambiguous"}
+]

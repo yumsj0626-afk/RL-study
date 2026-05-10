@@ -1,0 +1,18 @@
+{
+  "grid_size": [
+    8,
+    8
+  ],
+  "start": [
+    0,
+    0
+  ],
+  "goal": [
+    7,
+    7
+  ],
+  "obstacles": [],
+  "soft_avoid": [],
+  "preference": "safe",
+  "interpretation_notes": "안전하게는 preference=safe로 해석하고, 목표는 (7,7)로 설정"
+}

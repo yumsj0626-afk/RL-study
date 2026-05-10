@@ -1,0 +1,35 @@
+{
+  "grid_size": [
+    8,
+    8
+  ],
+  "start": [
+    0,
+    0
+  ],
+  "goal": [
+    7,
+    7
+  ],
+  "obstacles": [
+    [
+      3,
+      3
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      4,
+      3
+    ],
+    [
+      4,
+      4
+    ]
+  ],
+  "soft_avoid": [],
+  "preference": "default",
+  "interpretation_notes": "(3,3), (3,4), (4,3), (4,4) 영역을 obstacles로 분류"
+}

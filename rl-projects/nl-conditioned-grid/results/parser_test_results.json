@@ -1,0 +1,288 @@
+[
+  {
+    "id": "T01",
+    "command": "오른쪽 아래 구석으로 가",
+    "category": "clear",
+    "status": "PASS",
+    "spec": {
+      "grid_size": [
+        8,
+        8
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "goal": [
+        7,
+        7
+      ],
+      "obstacles": [],
+      "soft_avoid": [],
+      "preference": "default",
+      "interpretation_notes": "오른쪽 아래 구석을 (7,7)로 해석"
+    },
+    "notes": "오른쪽 아래 구석을 (7,7)로 해석",
+    "assessment": "의도 일치"
+  },
+  {
+    "id": "T02",
+    "command": "(7,7)로 가는데 (4,4) 주변은 피해",
+    "category": "constrained",
+    "status": "PASS",
+    "spec": {
+      "grid_size": [
+        8,
+        8
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "goal": [
+        7,
+        7
+      ],
+      "obstacles": [],
+      "soft_avoid": [
+        [
+          3,
+          4
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          4,
+          5
+        ]
+      ],
+      "preference": "default",
+      "interpretation_notes": "(4,4) 주변을 맨해튼 거리 1의 네 칸으로 해석하고, '피해'는 soft_avoid로 분류"
+    },
+    "notes": "(4,4) 주변을 맨해튼 거리 1의 네 칸으로 해석하고, '피해'는 soft_avoid로 분류",
+    "assessment": "제약을 hard/soft 영역으로 변환"
+  },
+  {
+    "id": "T03",
+    "command": "안전하게 목표까지",
+    "category": "ambiguous",
+    "status": "PASS",
+    "spec": {
+      "grid_size": [
+        8,
+        8
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "goal": null,
+      "obstacles": [],
+      "soft_avoid": [],
+      "preference": "safe",
+      "interpretation_notes": "안전하게는 preference=safe로 해석했지만 목표가 명시되지 않아 goal=null"
+    },
+    "notes": "안전하게는 preference=safe로 해석했지만 목표가 명시되지 않아 goal=null",
+    "assessment": "목표 미명시를 goal=null로 보존"
+  },
+  {
+    "id": "T04",
+    "command": "빠르게 가",
+    "category": "underspecified",
+    "status": "PASS",
+    "spec": {
+      "grid_size": [
+        8,
+        8
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "goal": null,
+      "obstacles": [],
+      "soft_avoid": [],
+      "preference": "shortest",
+      "interpretation_notes": "빠르게는 preference=shortest로 해석했지만 목표가 명시되지 않아 goal=null"
+    },
+    "notes": "빠르게는 preference=shortest로 해석했지만 목표가 명시되지 않아 goal=null",
+    "assessment": "목표 미명시를 goal=null로 보존"
+  },
+  {
+    "id": "T05",
+    "command": "왼쪽 위로 가되 가운데 칸은 절대 피해",
+    "category": "clear_hard",
+    "status": "PASS",
+    "spec": {
+      "grid_size": [
+        8,
+        8
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "goal": [
+        0,
+        0
+      ],
+      "obstacles": [
+        [
+          3,
+          3
+        ]
+      ],
+      "soft_avoid": [],
+      "preference": "default",
+      "interpretation_notes": "왼쪽 위를 (0,0)으로 해석하고, 가운데 칸을 (3,3)으로 해석하여 절대 피해는 obstacles로 분류"
+    },
+    "notes": "왼쪽 위를 (0,0)으로 해석하고, 가운데 칸을 (3,3)으로 해석하여 절대 피해는 obstacles로 분류",
+    "assessment": "의도 일치"
+  },
+  {
+    "id": "T06",
+    "command": "(0,7)로 가고 가장 짧게 가",
+    "category": "clear_pref",
+    "status": "PASS",
+    "spec": {
+      "grid_size": [
+        8,
+        8
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "goal": [
+        0,
+        7
+      ],
+      "obstacles": [],
+      "soft_avoid": [],
+      "preference": "shortest",
+      "interpretation_notes": "(0,7)을 목표로 설정하고, '가장 짧게'는 preference=shortest로 해석"
+    },
+    "notes": "(0,7)을 목표로 설정하고, '가장 짧게'는 preference=shortest로 해석",
+    "assessment": "의도 일치"
+  },
+  {
+    "id": "T07",
+    "command": "오른쪽 아래 구석으로 가고 (3,3)~(3,5) 라인은 위험해",
+    "category": "constrained_soft",
+    "status": "PASS",
+    "spec": {
+      "grid_size": [
+        8,
+        8
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "goal": [
+        7,
+        7
+      ],
+      "obstacles": [],
+      "soft_avoid": [
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          5
+        ]
+      ],
+      "preference": "default",
+      "interpretation_notes": "오른쪽 아래 구석을 (7,7)로 해석하고, (3,3)~(3,5) 라인을 포함한 세 칸을 soft_avoid로 분류"
+    },
+    "notes": "오른쪽 아래 구석을 (7,7)로 해석하고, (3,3)~(3,5) 라인을 포함한 세 칸을 soft_avoid로 분류",
+    "assessment": "제약을 hard/soft 영역으로 변환"
+  },
+  {
+    "id": "T08",
+    "command": "장애물 없이 목표까지",
+    "category": "underspecified",
+    "status": "PASS",
+    "spec": {
+      "grid_size": [
+        8,
+        8
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "goal": null,
+      "obstacles": [],
+      "soft_avoid": [],
+      "preference": "default",
+      "interpretation_notes": "장애물이 없다는 것은 obstacles이 없음을 의미하지만, 목표가 명시되지 않아 goal=null"
+    },
+    "notes": "장애물이 없다는 것은 obstacles이 없음을 의미하지만, 목표가 명시되지 않아 goal=null",
+    "assessment": "목표 미명시를 goal=null로 보존"
+  },
+  {
+    "id": "T09",
+    "command": "(5,5)에서 출발해서 (0,0)까지 안전하게",
+    "category": "clear_with_start",
+    "status": "PASS",
+    "spec": {
+      "grid_size": [
+        8,
+        8
+      ],
+      "start": [
+        5,
+        5
+      ],
+      "goal": [
+        0,
+        0
+      ],
+      "obstacles": [],
+      "soft_avoid": [],
+      "preference": "safe",
+      "interpretation_notes": "출발지를 (5,5)로, 목표를 (0,0)으로 설정하고, '안전하게'는 preference=safe로 해석"
+    },
+    "notes": "출발지를 (5,5)로, 목표를 (0,0)으로 설정하고, '안전하게'는 preference=safe로 해석",
+    "assessment": "의도 일치"
+  },
+  {
+    "id": "T10",
+    "command": "가운데로 가",
+    "category": "ambiguous",
+    "status": "PASS",
+    "spec": {
+      "grid_size": [
+        8,
+        8
+      ],
+      "start": [
+        0,
+        0
+      ],
+      "goal": [
+        3,
+        3
+      ],
+      "obstacles": [],
+      "soft_avoid": [],
+      "preference": "default",
+      "interpretation_notes": "가운데를 (3,3)으로 해석했으며, 8x8 그리드에는 여러 중앙 셀이 있을 수 있음"
+    },
+    "notes": "가운데를 (3,3)으로 해석했으며, 8x8 그리드에는 여러 중앙 셀이 있을 수 있음",
+    "assessment": "모호성을 interpretation_notes에 기록"
+  }
+]

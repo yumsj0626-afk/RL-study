@@ -1,0 +1,20 @@
+{
+  "status": "build_failed",
+  "command": "빠르게 가",
+  "error": "Goal is underspecified",
+  "spec": {
+    "grid_size": [
+      8,
+      8
+    ],
+    "start": [
+      0,
+      0
+    ],
+    "goal": null,
+    "obstacles": [],
+    "soft_avoid": [],
+    "preference": "shortest",
+    "interpretation_notes": "빠르게는 preference=shortest로 해석했지만 목표가 명시되지 않아 goal=null"
+  }
+}

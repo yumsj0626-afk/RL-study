@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Navigation Command Schema v1",
+  "type": "object",
+  "required": ["goal", "grid_size"],
+  "additionalProperties": false,
+  "properties": {
+    "grid_size": {
+      "type": "array",
+      "items": {"type": "integer"},
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "[height, width]"
+    },
+    "start": {
+      "type": "array",
+      "items": {"type": "integer"},
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "Start coordinate [row, col]. Defaults to [0, 0]."
+    },
+    "goal": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {"type": "integer"},
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {"type": "null"}
+      ],
+      "description": "Goal coordinate [row, col], or null when no goal can be inferred."
+    },
+    "obstacles": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {"type": "integer"},
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "description": "Hard collision cells that trigger -100 and reset."
+    },
+    "soft_avoid": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {"type": "integer"},
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "description": "Soft avoidance cells with a -5 penalty but passable."
+    },
+    "preference": {
+      "type": "string",
+      "enum": ["shortest", "safe", "default"],
+      "description": "shortest: distance shaping; safe: soft-avoid proximity penalty; default: no extra shaping."
+    },
+    "interpretation_notes": {
+      "type": "string",
+      "description": "Short report of how ambiguous language was interpreted."
+    }
+  }
+}
