@@ -39,15 +39,36 @@ Course 2는 그 가정을 버린다. 환경을 모를 때, **샘플링된 경험
 
 ```
 2. 샘플 기반 학습 방법/
-├── README.md          ← (현재 파일) 코스 진입점
-├── Module2/
-│   └── Module2.md
-├── Module3/
-│   └── Module3.md
-├── Module4/
-│   └── Module4.md
-└── Module5/
-    └── Module5.md
+├── README.md                  ← (현재 파일) 코스 진입점
+│
+├── Module2/                   — Monte Carlo Methods
+│   ├── Module2.md             강의 내용 정리
+│   ├── 모듈2_실습/
+│   │   └── Blackjack.ipynb    Blackjack 환경 MC 구현 실습
+│   └── 퀴즈 정리/
+│       └── 퀴즈를 통한 이전 복습 정리.md
+│
+├── Module3/                   — TD Prediction
+│   ├── Module3.md             강의 내용 정리
+│   ├── Module3_통합요약.md     모듈 전체 통합 요약
+│   ├── 모듈3특강.md            Barto & Sutton 대담 + 강화학습 역사 정리
+│   ├── 모듈3실습/
+│   │   ├── 모듈3실습.ipynb     TD(0) 구현 실습
+│   │   └── Readme.md          실습 설명
+│   └── 모듈3 퀴즈 정리/
+│       └── 모듈3 퀴즈정리.md
+│
+├── Module4/                   — TD Control (SARSA / Q-learning / Expected Sarsa)
+│   ├── Module4.md             강의 내용 정리
+│   ├── 모듈4종합요약.md         모듈 전체 통합 요약
+│   └── 모듈4 실습/
+│       ├── assignment (1).ipynb   Cliff Walking 등 TD Control 실습
+│       └── README.md
+│
+└── Module5/                   — Planning, Learning & Acting (Dyna)
+    ├── Module5..md            강의 내용 정리 (Sample/Distribution Model, Dyna-Q, Dyna-Q+)
+    └── 모듈5특강 요약.md       Model-based RL 특강 (로봇/연속 제어 관점)
+
 ```
 
 ---
