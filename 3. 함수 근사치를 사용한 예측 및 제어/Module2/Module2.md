@@ -1,308 +1,606 @@
-# Module 2 — On-policy Prediction with Approximation
-
-> Course 3: Prediction and Control with Function Approximation
-> 교재 범위: Sutton & Barto Ch. 9.1 – 9.4 (pp. 197–209)
-
-지금까지(Course 1·2)의 모든 예측·제어 방법은 **표(table)** 기반이었다. 상태마다 칸이 하나씩 있고, 한 상태를 업데이트해도 다른 상태는 그대로였다. 이번 모듈부터는 상태 공간이 너무 커서(혹은 연속이라서) 표를 쓸 수 없는 경우를 다룬다. 핵심은 가치 함수를 **파라미터화된 함수(parameterized function)** $\hat{v}(s, \mathbf{w}) \approx v_\pi(s)$ 로 표현하고, 가중치 벡터 $\mathbf{w} \in \mathbb{R}^d$ 를 학습하는 것이다.
-
-여기서 보통 $d \ll |\mathcal{S}|$ 이므로, 하나의 가중치를 바꾸면 많은 상태의 추정값이 동시에 바뀐다. 이것이 **일반화(generalization)** 의 원천이자, 이번 파트 전체를 관통하는 새로운 어려움의 원천이다.
+# Course 3 — Prediction and Control with Function Approximation
+## Module 2: On-policy Prediction with Approximation
 
 ---
 
-## 1. Moving to Parameterized Functions
-
-표 기반 가치 함수는 상태 개수만큼의 항목을 갖는 거대한 룩업 테이블이다. 상태가 많아지면(예: 카메라 이미지는 우주의 원자 수보다 경우의 수가 많다) 표는 메모리·데이터 측면에서 불가능하다.
-
-대안은 가치 함수를 가중치 벡터 $\mathbf{w}$ 로 매개되는 함수로 보는 것이다.
-
-$$
-\hat{v}(s, \mathbf{w}) \approx v_\pi(s)
-$$
-
-$\hat{v}$ 의 구체적 형태는 다양하다.
-
-- 상태의 특징(feature)에 대한 **선형 함수** (이때 $\mathbf{w}$ 는 특징 가중치 벡터)
-- **다층 인공 신경망** (이때 $\mathbf{w}$ 는 전 계층의 연결 가중치)
-- **결정 트리** (이때 $\mathbf{w}$ 는 분할 지점과 잎 노드 값)
-
-표는 이 틀의 특수한 경우로 볼 수 있다. 각 상태에 대응하는 항목이 곧 하나의 가중치이고, 상태별 특징 벡터가 one-hot 형태일 때가 정확히 표 기반이다.
-
-> 부분 관측(partial observability) 연결: $\hat{v}$ 의 함수 형태가 상태의 특정 측면에 의존하지 못하게 설계되면, 그 측면은 관측되지 않는 것과 동일하게 작동한다. 함수 근사 결과들은 부분 관측 문제에도 그대로 적용된다. 다만 함수 근사가 **할 수 없는** 것은 과거 관측의 기억을 상태 표현에 추가하는 일이다.
+### Parameterizing the Value Function
 
 ---
 
-## 2. Generalization and Discrimination
+## 한 줄 요약
 
-함수 근사를 평가하는 두 축을 구분해야 한다.
+테이블에 상태별 가치를 저장하는 방식 대신, **파라미터(가중치)로 정의된 함수**로 가치 함수를 근사하는 새로운 관점을 도입합니다.
 
-| 개념 | 의미 |
+---
+
+## 핵심 개념 정리
+
+### 왜 테이블 방식으로는 부족한가
+
+카메라로 세상을 보는 로봇을 상상해봅시다. 가능한 모든 이미지 각각에 테이블 항목을 저장하는 것은 불가능합니다. 현실의 상태 공간은 테이블에 담기엔 너무 큽니다.
+
+원칙적으로는 **상태를 입력받아 실수를 출력하는 어떤 함수든** 가치 함수로 쓸 수 있습니다. 하지만 학습(수정)이 불가능한 고정 함수는 의미가 없습니다.
+
+---
+
+### 파라미터화된 함수
+
+가중치 벡터 $\mathbf{w}$를 도입하면 함수의 출력을 조정할 수 있습니다.
+
+$$\hat{v}(s, \mathbf{w}) \approx v_\pi(s)$$
+
+- $\hat{v}$: 근사 가치 함수 (true value function을 근사한다는 의미)
+- $\mathbf{w}$: 학습 가능한 가중치 벡터
+
+예시: 그리드에서 $\hat{v}(s, \mathbf{w}) = w_1 \cdot x + w_2 \cdot y$ 로 표현하면, 1,000개 상태를 단 2개의 가중치로 표현할 수 있습니다.
+
+> 테이블 방식에서 가중치를 바꾸면 해당 상태의 값만 변합니다. 파라미터화된 함수에서 $w_1$을 바꾸면 **모든 상태의 추정값이 동시에 변합니다.** 이것이 일반화의 시작입니다.
+
+---
+
+### 선형 함수 근사 (Linear Function Approximation)
+
+가치를 **특징 벡터(feature vector)와 가중치의 내적**으로 표현하는 방식입니다.
+
+$$\hat{v}(s, \mathbf{w}) = \mathbf{x}(s)^\top \mathbf{w} = \sum_i x_i(s) \cdot w_i$$
+
+- $\mathbf{x}(s)$: 상태 $s$의 특징 벡터 (고정, 학습되지 않음)
+- $\mathbf{w}$: 학습되는 가중치 벡터
+
+특징 선택이 표현 가능한 가치 함수의 범위를 결정합니다. X, Y 좌표를 특징으로 쓰면 선형으로 변하는 가치 함수만 표현할 수 있습니다.
+
+---
+
+### 테이블 방식은 선형 함수 근사의 특수 사례
+
+각 상태 $s_i$에 대해 $i$번째 특징만 1이고 나머지가 0인 **지시 함수(indicator function)**를 특징으로 쓰면:
+
+$$\hat{v}(s_i, \mathbf{w}) = w_i$$
+
+각 상태의 가치가 별도의 가중치 하나로 표현되므로, 이는 정확히 테이블과 동일합니다. 즉, **테이블 방식 ⊂ 선형 함수 근사 ⊂ 비선형 함수 근사(신경망 등)**.
+
+---
+
+## 비교 / 정리 표
+
+| 방식 | 저장 형태 | 상태 수 의존성 | 일반화 |
+| :--- | :--- | :--- | :--- |
+| 테이블 | 상태별 독립 값 | 상태 수에 비례 | 없음 |
+| 선형 함수 근사 | 가중치 벡터 $\mathbf{w}$ | 특징 수에만 비례 | 있음 |
+| 신경망 | 레이어별 가중치 | 네트워크 크기 | 있음 (비선형) |
+
+---
+
+## 이전 내용과의 연결 / 다음으로 이어지는 흐름
+
+Course 2까지는 "테이블에 가치를 저장한다"는 가정 아래 MC·TD·Dyna를 배웠습니다. 이번 영상은 그 가정을 제거하고, **파라미터화된 함수로 가치를 근사하는 새로운 틀**을 제시했습니다.
+
+다음 영상에서는 이 틀에서 가장 중요한 개념인 **일반화(generalization)와 분별(discrimination)**의 트레이드오프를 다룹니다.
+
+---
+
+### Generalization and Discrimination
+
+---
+
+## 한 줄 요약
+
+함수 근사에서 **일반화**(비슷한 상태끼리 지식 공유)와 **분별**(다른 상태를 다르게 처리)은 서로 상충하며, 좋은 함수 근사는 둘 다 적절히 달성해야 합니다.
+
+---
+
+## 핵심 개념 정리
+
+### 일반화 (Generalization)
+
+한 상태의 가치 추정이 업데이트될 때 다른 상태의 추정도 영향을 받는 것입니다.
+
+한 번 차를 운전하는 법을 배우면 다른 차를 처음부터 다시 배울 필요가 없는 것처럼, 에이전트도 유사한 상태들에 대해 경험을 공유하면 더 빠르게 학습할 수 있습니다.
+
+> 캔 수집 로봇 예시: 여러 위치에서 가장 가까운 캔까지의 거리가 같다면, 이 상태들은 비슷한 가치를 가질 것입니다. 일반화를 통해 이 상태들의 가치를 함께 학습하면 효율적입니다.
+
+---
+
+### 분별 (Discrimination)
+
+두 상태의 가치를 **다르게** 추정할 수 있는 능력입니다.
+
+캔이 3피트 앞에 있지만 벽 뒤에 있는 상태와, 캔이 3피트 앞에 있고 길이 열려 있는 상태는 분명히 다른 가치를 가집니다. 단순히 거리만 보고 일반화하면 이 차이를 포착할 수 없습니다.
+
+---
+
+### 두 축의 트레이드오프
+
+| 극단 | 일반화 | 분별 | 결과 |
+| :--- | :--- | :--- | :--- |
+| 테이블 방식 | 없음 | 완벽 | 빠른 학습 불가, 대규모 문제 불가 |
+| 모든 상태를 같게 처리 | 최대 | 없음 | 상태 무관 평균 보상만 학습 가능 |
+| 이상적인 방식 | 적절 | 적절 | 유사 상태 공유 + 차이 있는 상태 구분 |
+
+체스 예시가 이를 잘 보여줍니다. 약 $10^{46}$개의 상태를 모두 테이블로 저장하는 것은 불가능하므로, 승리 확률이 비슷한 상태들을 묶어 일반화해야 합니다.
+
+> 실제로는 완벽한 일반화도, 완벽한 분별도 아닌 그 사이 어딘가에 위치합니다. 어떻게 일반화하느냐가 알고리즘 성능에 결정적 영향을 미칩니다.
+
+---
+
+## 이전 내용과의 연결 / 다음으로 이어지는 흐름
+
+파라미터화된 함수의 핵심 장점인 일반화 개념을 명확히 했습니다. 다음 영상에서는 가치 추정 문제를 **지도학습(Supervised Learning)** 관점으로 바라보는 틀을 소개하고, 이를 통해 목적 함수와 학습 알고리즘을 유도합니다.
+
+---
+
+### Framing Value Estimation as Supervised Learning
+
+---
+
+## 한 줄 요약
+
+정책 평가 문제를 지도학습으로 재해석할 수 있지만, RL의 **온라인 설정**과 **부트스트래핑**이라는 특성 때문에 모든 지도학습 기법이 적합하지는 않습니다.
+
+---
+
+## 핵심 개념 정리
+
+### 지도학습과의 유사성
+
+지도학습은 (입력, 목표값) 쌍으로부터 함수를 학습합니다.
+
+강화학습의 정책 평가도 같은 구조로 볼 수 있습니다.
+
+| RL | 지도학습 대응 |
 | :--- | :--- |
-| 일반화 (Generalization) | 한 상태에 대한 업데이트가 유사한 다른 상태들의 추정값에 함께 영향을 미치는 정도 |
-| 변별 (Discrimination) | 두 상태를 서로 다른 값으로 구분할 수 있는 능력 |
-
-표 기반은 변별이 완벽하지만(모든 상태 독립) 일반화가 전혀 없다(데이터 효율이 나쁨). 함수 근사는 일반화를 얻는 대신 변별을 일부 희생한다.
-
-좋은 함수 근사기는 이 둘의 균형을 잡는다. 너무 일반화하면 서로 다른 상태를 같은 값으로 뭉뚱그리고(변별 손실), 너무 변별하면 표와 다를 바 없어진다(일반화 손실). 이번 모듈 이후의 특징 설계(Module 3)는 결국 "어떤 상태들 사이에 일반화를 허용할 것인가"를 설계하는 작업이다.
+| 상태 $s$ | 입력 |
+| 리턴 $G_t$ (MC) 또는 TD 타깃 | 목표값(target) |
+| 가치 함수 근사 $\hat{v}$ | 학습된 함수 |
 
 ---
 
-## 3. Framing Value Estimation as Supervised Learning
+### 강화학습만의 두 가지 도전
 
-각 업데이트를 $s \mapsto u$ 로 표기하자. $s$ 는 업데이트되는 상태, $u$ 는 그 추정값이 향해야 할 **목표(update target)** 다.
+**1. 온라인 설정 (Online Setting)**
 
-| 방법 | 업데이트 형태 $s \mapsto u$ |
-| :--- | :--- |
-| Monte Carlo | $S_t \mapsto G_t$ |
-| TD(0) | $S_t \mapsto R_{t+1} + \gamma\,\hat{v}(S_{t+1}, \mathbf{w}_t)$ |
-| n-step TD | $S_t \mapsto G_{t:t+n}$ |
-| DP | $s \mapsto \mathbb{E}_\pi[R_{t+1} + \gamma\,\hat{v}(S_{t+1}, \mathbf{w}_t) \mid S_t = s]$ |
+지도학습은 보통 학습 전에 전체 데이터셋이 고정되어 있습니다(오프라인). 반면 RL 에이전트는 환경과 상호작용하며 **실시간으로 데이터를 생성**합니다. 또한 RL 데이터는 시간적으로 상관되어 있어(temporally correlated), 독립적인 샘플을 가정하는 방법은 적합하지 않습니다.
 
-각 업데이트는 "입력 $s$, 출력 $u$" 라는 하나의 **훈련 예제(training example)** 로 해석할 수 있다. 즉 가치 추정을 **지도 학습(supervised learning)** 문제로 재구성하면, 기존의 함수 근사 기법(신경망, 회귀, 결정 트리 등)을 그대로 가져다 쓸 수 있다.
+**2. 변하는 타깃 (Changing Targets with Bootstrapping)**
 
-다만 RL에 그대로 쓰기엔 모든 지도 학습 기법이 적합하지는 않다. RL이 요구하는 추가 조건은 다음과 같다.
+TD는 자신의 가치 추정을 타깃으로 사용합니다.
 
-- **온라인 학습(online learning)**: 정적 데이터셋을 여러 번 훑는 방식이 아니라, 환경과 상호작용하며 점진적으로 들어오는 데이터로 학습해야 한다.
-- **비정상 목표(nonstationary targets) 대응**: GPI에서 $\pi$ 가 변하면 목표 $q_\pi$ 도 변한다. 정책이 고정되어도 부트스트래핑(DP·TD) 목표는 $\mathbf{w}$ 에 의존하므로 시간에 따라 변한다.
+$$U_t = R_{t+1} + \gamma \hat{v}(S_{t+1}, \mathbf{w})$$
+
+가중치 $\mathbf{w}$가 업데이트될 때마다 타깃도 같이 변합니다. 집값은 우리의 추정과 무관하게 고정되어 있지만, TD 타깃은 우리의 추정에 의존합니다. 대부분의 지도학습 방법은 이런 변하는 타깃을 위해 설계되지 않았습니다.
+
+> 핵심 요건: 온라인 업데이트 가능 + 부트스트래핑(변하는 타깃)에 대응 가능한 방법이 필요합니다.
 
 ---
 
-## 4. The Value Error Objective ($\overline{VE}$)
+## 이전 내용과의 연결 / 다음으로 이어지는 흐름
 
-표 기반에서는 학습된 값이 참값과 정확히 일치할 수 있어 "예측 품질"을 굳이 정의할 필요가 없었다. 하지만 함수 근사에서는 한 상태를 더 맞히면 다른 상태가 덜 맞는 트레이드오프가 불가피하므로, **어떤 상태의 오차를 더 중요하게 볼 것인지** 를 명시해야 한다.
-
-이를 위해 상태 분포 $\mu(s) \ge 0,\ \sum_s \mu(s) = 1$ 을 도입한다. 그러면 자연스러운 목적 함수인 **평균 제곱 가치 오차(Mean Squared Value Error)** 가 정의된다.
-
-$$
-\overline{VE}(\mathbf{w}) \doteq \sum_{s \in \mathcal{S}} \mu(s)\,\big[\,v_\pi(s) - \hat{v}(s, \mathbf{w})\,\big]^2
-$$
-
-- $\mu(s)$ 는 보통 **상태 $s$ 에서 보내는 시간의 비율**로 선택된다. on-policy 학습에서 이는 **on-policy 분포(on-policy distribution)** 라 불린다.
-- 연속 과제(continuing task)에서는 $\pi$ 하의 정상 분포(stationary distribution)다.
-- 에피소드 과제에서는 시작 상태 분포 $h(s)$ 에 의존한다. 상태별 평균 방문 횟수 $\eta(s)$ 를 구한 뒤 정규화한다.
-
-$$
-\eta(s) = h(s) + \sum_{\bar{s}} \eta(\bar{s}) \sum_a \pi(a \mid \bar{s})\, p(s \mid \bar{s}, a)
-\qquad
-\mu(s) = \frac{\eta(s)}{\sum_{s'} \eta(s')}
-$$
-
-> $\overline{VE}$ 가 RL의 "올바른" 목적인지는 사실 자명하지 않다. 우리의 궁극적 목적은 더 나은 정책을 찾는 것이고, $\overline{VE}$ 최소화가 곧 최선의 정책을 보장하지는 않는다. 그래도 현재로선 더 나은 대안이 명확하지 않아 $\overline{VE}$ 에 집중한다.
-
-최적해는 전역 최적점 $\mathbf{w}^*$ ($\overline{VE}(\mathbf{w}^*) \le \overline{VE}(\mathbf{w})$ for all $\mathbf{w}$) 이지만, 신경망·결정 트리 같은 복잡한 근사기에서는 보통 지역 최적점(local optimum)에 도달하는 것이 최선이다. 일부 방법은 발산할 수도 있다(Ch. 11에서 다룸).
+지도학습 틀을 빌려오되, RL 고유의 특성 때문에 그대로 쓸 수 없음을 확인했습니다. 다음 영상에서는 이 틀에서 **정확히 무엇을 최적화할 것인가**, 즉 목적 함수를 정의합니다.
 
 ---
 
-## 5. Introducing Gradient Descent
-
-가중치 벡터를 매 예제마다 오차를 가장 빠르게 줄이는 방향으로 조금씩 조정하는 방법이 **확률적 경사 하강법(Stochastic Gradient Descent, SGD)** 이다.
-
-참값 $v_\pi(S_t)$ 를 알고 있다고 가정할 때:
-
-$$
-\mathbf{w}_{t+1} \doteq \mathbf{w}_t - \tfrac{1}{2}\alpha\, \nabla \big[\,v_\pi(S_t) - \hat{v}(S_t, \mathbf{w}_t)\,\big]^2
-= \mathbf{w}_t + \alpha\,\big[\,v_\pi(S_t) - \hat{v}(S_t, \mathbf{w}_t)\,\big]\,\nabla \hat{v}(S_t, \mathbf{w}_t)
-$$
-
-여기서 $\nabla f(\mathbf{w})$ 는 $f$ 의 각 성분에 대한 편미분으로 이루어진 **기울기(gradient)** 벡터다.
-
-$$
-\nabla f(\mathbf{w}) \doteq \Big( \frac{\partial f}{\partial w_1}, \frac{\partial f}{\partial w_2}, \dots, \frac{\partial f}{\partial w_d} \Big)^\top
-$$
-
-**왜 한 번에 오차를 0으로 만들지 않고 작은 보폭($\alpha$)으로 가는가?** 우리는 어떤 상태도 오차가 0인 가치 함수를 기대하지 않는다. 우리가 원하는 것은 서로 다른 상태들의 오차를 **균형** 있게 맞추는 근사다. 한 예제를 한 번에 완전히 보정하면 그 균형이 깨진다. SGD의 수렴 보장은 $\alpha$ 가 시간에 따라 표준 확률 근사 조건(2.7)을 만족하며 감소할 것을 가정한다.
-
-참값 대신 목표 $U_t$ 를 쓰는 일반형은 다음과 같다.
-
-$$
-\mathbf{w}_{t+1} \doteq \mathbf{w}_t + \alpha\,\big[\,U_t - \hat{v}(S_t, \mathbf{w}_t)\,\big]\,\nabla \hat{v}(S_t, \mathbf{w}_t)
-$$
-
-$U_t$ 가 **불편 추정량(unbiased estimate)**, 즉 $\mathbb{E}[U_t \mid S_t = s] = v_\pi(s)$ 이면, 감소하는 $\alpha$ 하에서 지역 최적점으로 수렴이 보장된다.
+### The Mean Squared Value Error Objective
 
 ---
 
-## 6. Gradient Monte Carlo for Policy Evaluation
+## 한 줄 요약
 
-MC 목표 $U_t = G_t$ 는 정의상 $v_\pi(S_t)$ 의 **불편 추정량**이다. 따라서 위의 SGD 일반형에 그대로 대입하면 지역 최적해(선형 근사라면 전역 최적해)로의 수렴이 보장된다.
+함수 근사에서는 모든 상태를 동시에 완벽하게 맞출 수 없으므로, **어떤 상태를 더 중요하게 볼 것인가**를 명시한 목적 함수가 필요합니다. 이것이 평균 제곱 가치 오차($\overline{VE}$)입니다.
+
+---
+
+## 핵심 개념 정리
+
+### 왜 목적 함수가 필요한가
+
+선형 함수 근사에서는 한 상태의 오차를 줄이면 다른 상태의 오차가 커질 수 있습니다. 따라서 상태 간 오차를 어떻게 가중할지를 명시해야 합니다.
+
+---
+
+### 평균 제곱 가치 오차 ($\overline{VE}$)
+
+$$\overline{VE}(\mathbf{w}) \doteq \sum_{s \in \mathcal{S}} \mu(s) \left[ v_\pi(s) - \hat{v}(s, \mathbf{w}) \right]^2$$
+
+- $\mu(s)$: 상태 $s$에 대한 가중치 — 정책 $\pi$를 따를 때 각 상태를 방문하는 시간의 비율(방문 빈도 분포)
+- 자주 방문하는 상태의 오차를 더 중요시합니다.
+
+> 직관: 에이전트가 별로 가지 않는 상태(예: 상태 공간의 극단)에서 추정이 부정확해도 크게 문제가 없습니다. 반면 자주 방문하는 상태의 오차는 실제 의사결정에 큰 영향을 미칩니다.
+
+---
+
+### $\mu(s)$의 역할
+
+$\mu(s)$는 확률 분포입니다. 상태 공간의 중심부 상태는 $\mu$가 높고, 주변부 상태는 낮습니다. $\overline{VE}$는 이 분포를 반영해 가중치를 더 신경 쓰는 상태에 집중해서 최적화합니다.
+
+---
+
+## 이전 내용과의 연결 / 다음으로 이어지는 흐름
+
+목적 함수 $\overline{VE}$를 정의했습니다. 다음 영상에서는 이 목적 함수를 **최소화하는 방법**, 즉 경사 하강법(Gradient Descent)을 소개합니다.
+
+---
+
+### Gradient Descent
+
+---
+
+## 한 줄 요약
+
+목적 함수를 최소화하는 일반적 전략인 **경사 하강법**을 소개합니다. 기울기(gradient)의 반대 방향으로 가중치를 조금씩 이동하는 것이 핵심 아이디어입니다.
+
+---
+
+## 핵심 개념 정리
+
+### 그래디언트 (Gradient)
+
+스칼라 함수 $f(\mathbf{w})$의 그래디언트는 **각 가중치 성분으로의 편미분 벡터**입니다.
+
+$$\nabla f(\mathbf{w}) = \left( \frac{\partial f}{\partial w_1}, \frac{\partial f}{\partial w_2}, \ldots \right)$$
+
+- 그래디언트의 방향: $f$를 가장 크게 증가시키는 방향
+- 그래디언트의 크기: 해당 방향으로의 변화 속도
+
+**선형 함수 근사의 그래디언트:**
+
+$$\nabla \hat{v}(s, \mathbf{w}) = \mathbf{x}(s)$$
+
+선형 함수의 그래디언트는 단순히 특징 벡터입니다.
+
+---
+
+### 경사 하강법 업데이트 규칙
+
+$$\mathbf{w} \leftarrow \mathbf{w} - \alpha \nabla f(\mathbf{w})$$
+
+- 그래디언트의 **반대 방향**으로 이동 → $f$ 감소
+- $\alpha$ (스텝 크기): 너무 크면 과도하게 이동, 너무 작으면 느리게 수렴
+
+충분히 작은 $\alpha$로 반복하면 **정상점(stationary point)**에 수렴합니다. 정상점의 종류:
+
+| 정상점 유형 | 특징 | RL에서 도달 가능성 |
+| :--- | :--- | :--- |
+| 전역 최솟값 | 최적해 | 선형 함수 근사 시 보장 |
+| 지역 최솟값 | 주변보다 작음, 안정적 | 수렴 경향 |
+| 지역 최댓값 / 안장점 | 불안정 | 확률적 노이즈로 탈출 가능 |
+
+> 신경망처럼 복잡한 함수 근사에서는 전역 최솟값이 보장되지 않습니다. 그러나 지역 최솟값조차도 실용적으로 좋은 해일 수 있습니다.
+
+---
+
+## 이전 내용과의 연결 / 다음으로 이어지는 흐름
+
+목적 함수 $\overline{VE}$를 최소화하는 도구인 경사 하강법을 배웠습니다. 다음 영상에서는 이를 실제 MC 알고리즘에 적용합니다.
+
+---
+
+### Gradient Monte Carlo for Policy Evaluation
+
+---
+
+## 한 줄 요약
+
+실제 가치 $v_\pi(s)$ 대신 **샘플 리턴 $G_t$**를 타깃으로 사용하는 확률적 경사 하강법(SGD)으로 $\overline{VE}$를 최소화하는 Gradient Monte Carlo 알고리즘을 유도합니다.
+
+---
+
+## 핵심 개념 정리
+
+### $\overline{VE}$의 그래디언트 유도
+
+$$\nabla \overline{VE}(\mathbf{w}) = -2 \sum_s \mu(s) \left[ v_\pi(s) - \hat{v}(s, \mathbf{w}) \right] \nabla \hat{v}(s, \mathbf{w})$$
+
+선형 근사에서 $\nabla \hat{v}(s, \mathbf{w}) = \mathbf{x}(s)$이므로, 업데이트 방향이 직관적입니다.
+- 참값 > 추정값 → 가중치를 특징 벡터 방향으로 증가 (추정값 올림)
+- 참값 < 추정값 → 가중치를 특징 벡터 방향으로 감소 (추정값 내림)
+
+---
+
+### 확률적 경사 하강법 (SGD)
+
+전체 상태 합산 대신, 정책을 따라가며 **샘플링된 상태 하나**로 그래디언트를 추정합니다.
+
+$$\mathbf{w} \leftarrow \mathbf{w} + \alpha \left[ v_\pi(S_t) - \hat{v}(S_t, \mathbf{w}) \right] \nabla \hat{v}(S_t, \mathbf{w})$$
+
+노이즈가 있지만 기댓값은 실제 그래디언트와 같습니다 → 꾸준히 최솟값 방향으로 수렴합니다.
+
+---
+
+### $v_\pi$ 제거 → 샘플 리턴으로 대체
+
+실제 $v_\pi(s)$는 알 수 없으므로 MC처럼 **샘플 리턴 $G_t$**로 대체합니다.
+
+$$\mathbf{w} \leftarrow \mathbf{w} + \alpha \left[ G_t - \hat{v}(S_t, \mathbf{w}) \right] \nabla \hat{v}(S_t, \mathbf{w})$$
+
+$G_t$는 $v_\pi(S_t)$의 불편 추정량이므로, 이 업데이트의 기댓값은 여전히 $\overline{VE}$의 그래디언트입니다.
+
+---
+
+### Gradient Monte Carlo 알고리즘
 
 ```
-Gradient Monte Carlo Algorithm for Estimating v̂ ≈ v_π
+입력: 정책 π, 미분 가능한 함수 v̂(s, w), 스텝 크기 α
+초기화: w ← 0
 
-Input: 평가할 정책 π
-Input: 미분 가능한 함수 v̂ : S × R^d → R
-Algorithm parameter: 스텝 사이즈 α > 0
-가중치 w ∈ R^d 를 임의로 초기화 (예: w = 0)
-
-Loop forever (각 에피소드마다):
-    π 를 따라 에피소드 S_0, A_0, R_1, ..., R_T, S_T 생성
-    Loop for each step t = 0, 1, ..., T-1:
-        w ← w + α [G_t − v̂(S_t, w)] ∇v̂(S_t, w)
+루프 (에피소드 반복):
+  π를 따라 에피소드 생성: S₀, A₀, R₁, S₁, ..., S_T
+  각 t = T-1, T-2, ..., 0에 대해:
+    G_t 계산
+    w ← w + α[G_t - v̂(S_t, w)] ∇v̂(S_t, w)
 ```
 
-핵심은 목표 $G_t$ 가 $\mathbf{w}$ 와 **독립**이라는 점이다. 그래서 이것은 진정한(true) 경사 하강이다.
+---
+
+## 이전 내용과의 연결 / 다음으로 이어지는 흐름
+
+SGD + MC 리턴으로 $\overline{VE}$를 최소화하는 알고리즘을 완성했습니다. 다음 영상에서는 이를 **상태 집계(State Aggregation)**와 결합해 대규모 문제에 적용하는 구체적인 예시를 봅니다.
 
 ---
 
-## 7. State Aggregation with Monte Carlo
-
-**상태 집합(state aggregation)** 은 가장 단순한 일반화 함수 근사다. 상태들을 그룹으로 묶고, 각 그룹마다 추정값(가중치 성분) 하나를 둔다. 한 상태의 값은 그 그룹의 성분으로 추정되고, 업데이트 시 해당 그룹 성분만 갱신된다.
-
-상태 집합은 SGD의 특수 케이스로, 기울기 $\nabla \hat{v}(S_t, \mathbf{w}_t)$ 가 $S_t$ 가 속한 그룹 성분에서는 1, 나머지에서는 0인 경우다.
-
-**Example 9.1 — 1000-state Random Walk**
-
-- 상태 1~1000을 좌→우로 번호 매김, 모든 에피소드는 중앙(state 500)에서 시작.
-- 현재 상태에서 좌·우 인접 100개 상태 중 하나로 동일 확률 전이. 가장자리에서 빠지면 종료(좌측 종료 보상 $-1$, 우측 종료 보상 $+1$).
-- 1000개 상태를 100개씩 10개 그룹으로 묶고, gradient MC + 상태 집합으로 100,000 에피소드 학습.
-
-[그래프 위치 표시] — 참 가치 함수 $v_\pi$ vs. 근사값 $\hat{v}$ (계단 형태), 그리고 상태 분포 $\mu$
-
-결과의 특징은 그룹 내에서 근사값이 상수이고 그룹 경계에서 급변하는 **계단 효과(staircase effect)** 다. 또한 각 그룹의 추정값은 그룹 내 참값의 단순 평균이 아니라, $\mu$ 가 큰 상태 쪽으로 **치우친다**. 예컨대 가장 왼쪽 그룹에서는 state 100이 state 1보다 3배 이상 자주 방문되므로, 그룹 추정값이 state 100의 참값 쪽으로 편향된다. → $\overline{VE}$ 의 가중치 $\mu$ 가 최종 해의 형태를 어떻게 바꾸는지를 시각적으로 보여주는 예시.
+### State Aggregation with Monte Carlo
 
 ---
 
-## 8. Semi-Gradient TD for Policy Evaluation
+## 한 줄 요약
 
-부트스트래핑 목표(예: TD(0)의 $U_t = R_{t+1} + \gamma\,\hat{v}(S_{t+1}, \mathbf{w}_t)$)는 **현재 가중치 $\mathbf{w}_t$ 에 의존**한다. 따라서 편향되어 있고, SGD 유도의 핵심 단계(목표가 $\mathbf{w}_t$ 와 독립이라는 가정)가 무너진다.
+**상태 집계(State Aggregation)**는 비슷한 상태들을 하나의 그룹으로 묶어 같은 가치 추정을 공유하는 선형 함수 근사 기법입니다. 1,000개 상태의 랜덤 워크에 적용해 작동 방식을 확인합니다.
 
-이런 방법들은 가중치 변화가 추정값에 미치는 영향은 고려하지만 **목표에 미치는 영향은 무시**한다. 즉 기울기의 일부만 사용하므로 **준-경사법(semi-gradient method)** 이라 부른다.
+---
+
+## 핵심 개념 정리
+
+### 상태 집계란
+
+여러 상태를 하나의 그룹으로 묶고, 그룹 내 모든 상태에 **하나의 가중치(가치)를 공유**하는 방식입니다.
+
+선형 함수 근사의 특수 사례입니다.
+- 특징 $x_i(s)$ = 상태 $s$가 $i$번째 그룹에 속하면 1, 아니면 0 (지시 함수)
+- $\hat{v}(s, \mathbf{w}) = w_i$ (그룹 $i$에 해당하는 가중치)
+
+그룹의 어느 상태를 방문해도 해당 그룹의 가중치 하나만 업데이트됩니다.
+
+---
+
+### 1,000개 상태 랜덤 워크 실험
+
+- 상태: 1 ~ 1,000 (선형 배열), 시작: 상태 500
+- 행동: 왼쪽 또는 오른쪽 (각각 최대 100 상태 이동, 균일 랜덤)
+- 보상: 왼쪽 끝 도달 시 -1, 오른쪽 끝 도달 시 +1, 그 외 0
+- 함수 근사: **10개 그룹**, 각 그룹 100개 상태 (총 10개의 가중치)
+
+업데이트 규칙:
+
+$$w_i \leftarrow w_i + \alpha \left[ G_t - w_i \right]$$
+
+(현재 상태가 그룹 $i$에 속할 때)
+
+---
+
+### 수렴 결과와 $\mu$의 영향
+
+많은 에피소드 후 학습된 값은 계단 모양으로 수렴하지만, 참 가치 함수의 정중앙을 정확히 지나지 않습니다. 이유는 $\mu(s)$ 때문입니다.
+
+예: 1~100번 상태 그룹에서, 상태 100에 가까운 상태들이 훨씬 자주 방문됩니다. 따라서 $\overline{VE}$는 이 상태들의 오차를 더 중요시하고, 근사값은 상태 100 근처의 참값 쪽으로 치우칩니다.
+
+> 함수 근사가 "완벽하지 않다"는 것은 결함이 아닙니다. $\mu$가 높은, 즉 에이전트가 자주 방문하는 상태에서 더 정확하게 만드는 것이 $\overline{VE}$의 의도입니다.
+
+---
+
+## 이전 내용과의 연결 / 다음으로 이어지는 흐름
+
+Gradient MC + 상태 집계가 실제로 어떻게 동작하는지 확인했습니다. 다음 영상에서는 에피소드가 끝날 때까지 기다리지 않고 매 스텝 업데이트하는 **Semi-gradient TD**를 소개합니다.
+
+---
+
+### Semi-gradient TD for Policy Evaluation
+
+---
+
+## 한 줄 요약
+
+Gradient MC의 리턴 $G_t$ 대신 **TD 타깃**을 사용하면, 에피소드 종료를 기다리지 않고 매 스텝 업데이트할 수 있습니다. 단, TD 타깃이 가중치에 의존하기 때문에 이 방법은 **완전한 경사 하강법이 아닙니다** — 그래서 "준-경사(Semi-gradient)"라 부릅니다.
+
+---
+
+## 핵심 개념 정리
+
+### TD 타깃으로 대체
+
+일반화된 업데이트 식:
+
+$$\mathbf{w} \leftarrow \mathbf{w} + \alpha \left[ U_t - \hat{v}(S_t, \mathbf{w}) \right] \nabla \hat{v}(S_t, \mathbf{w})$$
+
+- $U_t = G_t$ (MC): 불편, 분산 큼
+- $U_t = R_{t+1} + \gamma \hat{v}(S_{t+1}, \mathbf{w})$ (TD): 편향, 분산 작음
+
+---
+
+### 왜 "Semi-gradient"인가
+
+TD 타깃 $U_t$는 $\mathbf{w}$에 의존합니다. 진정한 경사 하강법이라면 $U_t$에 대한 그래디언트 항도 포함해야 합니다.
+
+$$\text{True gradient: } \nabla \left[ U_t - \hat{v}(S_t, \mathbf{w}) \right]^2 = -2(U_t - \hat{v}) \nabla \hat{v} \underbrace{- 2(U_t - \hat{v}) \nabla U_t}_{\text{TD에서 이 항을 무시}}$$
+
+TD는 타깃의 그래디언트 $\nabla U_t$를 무시합니다. 이 때문에 $\overline{VE}$의 지역 최솟값으로 수렴이 보장되지 않지만, 많은 실용적인 경우에서 수렴합니다.
+
+---
+
+### Semi-gradient TD 알고리즘
 
 ```
-Semi-gradient TD(0) for estimating v̂ ≈ v_π
+입력: 정책 π, 미분 가능한 v̂(s, w), 스텝 크기 α
+초기화: w ← 임의값, v̂(terminal, w) = 0
 
-Input: 평가할 정책 π
-Input: 미분 가능한 함수 v̂ : S⁺ × R^d → R, 단 v̂(terminal, ·) = 0
-Algorithm parameter: 스텝 사이즈 α > 0
-가중치 w ∈ R^d 를 임의로 초기화 (예: w = 0)
-
-Loop for each episode:
-    S 초기화
-    Loop for each step of episode:
-        A ~ π(·|S) 선택
-        행동 A 수행, R, S' 관측
-        w ← w + α [R + γ v̂(S', w) − v̂(S, w)] ∇v̂(S, w)
-        S ← S'
-    until S is terminal
+루프 (에피소드 반복):
+  S 초기화
+  루프 (에피소드 각 스텝):
+    A ~ π(·|S) 선택
+    R, S' 관측
+    w ← w + α[R + γv̂(S', w) - v̂(S, w)] ∇v̂(S, w)
+    S ← S'
+  S가 종료 상태이면 종료
 ```
 
-준-경사법의 트레이드오프:
-
-- (단점) 경사법만큼 강건하게 수렴하지는 않는다.
-- (장점) 학습이 **훨씬 빠르다** (Ch. 6·7의 결론과 동일).
-- (장점) 에피소드 종료를 기다리지 않고 **연속적·온라인** 학습이 가능하다 → 연속 과제에 적용 가능, 계산상 이점.
+MC와 달리 에피소드가 끝나기 전에 업데이트를 수행합니다.
 
 ---
 
-## 9. Comparing TD and Monte Carlo with State Aggregation
+## 이전 내용과의 연결 / 다음으로 이어지는 흐름
 
-**Example 9.2 — Bootstrapping on the 1000-state Random Walk**
-
-상태 집합은 선형 함수 근사의 특수 케이스이므로, 같은 1000-state random walk에서 두 방법을 비교할 수 있다.
-
-[그래프 위치 표시] — (왼쪽) semi-gradient TD(0)의 점근 가치 함수가 MC(Fig 9.1)보다 참값에서 더 멀다. (오른쪽) n-step semi-gradient TD의 성능 곡선이 표 기반 19-state random walk(Fig 7.2)와 놀랍도록 유사
-
-요점: TD의 점근적 근사는 MC보다 **참값에서 더 멀지만**, 학습 속도(learning rate) 측면에서는 큰 잠재 이점을 유지한다. 어느 쪽이 나은지는 근사·문제의 성격과 학습을 얼마나 오래 지속하는지에 달려 있다 — 이는 9·10주차 Cliff Walking 실험에서 본 "이론적 최적성 ≠ 실제 성능"과 같은 결의 트레이드오프다.
-
-n-step semi-gradient TD의 핵심 업데이트:
-
-$$
-\mathbf{w}_{t+n} \doteq \mathbf{w}_{t+n-1} + \alpha\,\big[\,G_{t:t+n} - \hat{v}(S_t, \mathbf{w}_{t+n-1})\,\big]\,\nabla \hat{v}(S_t, \mathbf{w}_{t+n-1})
-$$
-
-$$
-G_{t:t+n} \doteq R_{t+1} + \gamma R_{t+2} + \cdots + \gamma^{n-1} R_{t+n} + \gamma^n \hat{v}(S_{t+n}, \mathbf{w}_{t+n-1})
-$$
+Semi-gradient TD는 편향이 있지만 분산이 작아 빠른 학습이 가능합니다. 다음 영상에서는 MC와 TD의 실제 성능을 비교합니다.
 
 ---
 
-## 10. The Linear TD Update (Linear Methods)
-
-가장 중요한 특수 케이스는 $\hat{v}(\cdot, \mathbf{w})$ 가 가중치 $\mathbf{w}$ 의 **선형 함수**인 경우다. 각 상태 $s$ 에 특징 벡터 $\mathbf{x}(s) = (x_1(s), \dots, x_d(s))^\top$ 를 대응시키면:
-
-$$
-\hat{v}(s, \mathbf{w}) \doteq \mathbf{w}^\top \mathbf{x}(s) = \sum_{i=1}^{d} w_i\, x_i(s)
-$$
-
-각 특징 $x_i$ 는 선형 근사 함수 집합의 **기저 함수(basis function)** 다. 선형의 경우 기울기가 매우 단순해진다.
-
-$$
-\nabla \hat{v}(s, \mathbf{w}) = \mathbf{x}(s)
-$$
-
-따라서 SGD 일반형이 다음으로 환원된다.
-
-$$
-\mathbf{w}_{t+1} \doteq \mathbf{w}_t + \alpha\,\big[\,U_t - \hat{v}(S_t, \mathbf{w}_t)\,\big]\,\mathbf{x}(S_t)
-$$
-
-선형의 결정적 장점: **지역 최적점이 곧 전역 최적점**이다. (퇴화 케이스를 제외하면 최적점이 하나뿐) 따라서 gradient MC는 선형 근사에서 $\overline{VE}$ 의 전역 최적해로 수렴한다.
+### Comparing TD and Monte Carlo with State Aggregation
 
 ---
 
-## 11. The True Objective for TD (TD Fixed Point)
+## 한 줄 요약
 
-선형 semi-gradient TD(0)도 수렴하지만, 그 수렴점은 $\overline{VE}$ 의 전역 최적점이 **아니라** 별도의 점이다. 연속 과제에서 업데이트는:
-
-$$
-\mathbf{w}_{t+1} \doteq \mathbf{w}_t + \alpha\,\big(R_{t+1} + \gamma\,\mathbf{w}_t^\top \mathbf{x}_{t+1} - \mathbf{w}_t^\top \mathbf{x}_t\big)\,\mathbf{x}_t
-$$
-
-정상 상태에서 기댓값을 취하면:
-
-$$
-\mathbb{E}[\mathbf{w}_{t+1} \mid \mathbf{w}_t] = \mathbf{w}_t + \alpha(\mathbf{b} - \mathbf{A}\mathbf{w}_t)
-$$
-
-$$
-\mathbf{b} \doteq \mathbb{E}[R_{t+1}\mathbf{x}_t] \in \mathbb{R}^d,
-\qquad
-\mathbf{A} \doteq \mathbb{E}\big[\mathbf{x}_t(\mathbf{x}_t - \gamma\mathbf{x}_{t+1})^\top\big] \in \mathbb{R}^d \times \mathbb{R}^d
-$$
-
-수렴한다면 다음을 만족하는 점, 즉 **TD 고정점(TD fixed point)** 에 도달한다.
-
-$$
-\mathbf{b} - \mathbf{A}\mathbf{w}_{TD} = 0 \quad\Rightarrow\quad \mathbf{w}_{TD} = \mathbf{A}^{-1}\mathbf{b}
-$$
-
-**수렴 조건(직관):** 업데이트를 $\mathbb{E}[\mathbf{w}_{t+1} \mid \mathbf{w}_t] = (\mathbf{I} - \alpha\mathbf{A})\mathbf{w}_t + \alpha\mathbf{b}$ 로 다시 쓰면, 안정성을 결정하는 것은 행렬 $\mathbf{A}$ 다. $\mathbf{A}$ 가 **양의 정부호(positive definite)** 이면 ($\mathbf{y}^\top \mathbf{A}\mathbf{y} > 0$ for all $\mathbf{y} \ne 0$) 안정성이 보장되고 $\mathbf{A}^{-1}$ 도 존재한다. on-policy 분포 하에서 $\mathbf{A} = \mathbf{X}^\top \mathbf{D}(\mathbf{I} - \gamma\mathbf{P})\mathbf{X}$ 의 핵심 행렬 $\mathbf{D}(\mathbf{I} - \gamma\mathbf{P})$ 가 양의 정부호임이 증명된다.
-
-**TD 고정점의 오차 한계 (연속 과제):**
-
-$$
-\overline{VE}(\mathbf{w}_{TD}) \le \frac{1}{1-\gamma}\,\min_{\mathbf{w}} \overline{VE}(\mathbf{w})
-$$
-
-즉 TD의 점근 오차는 MC가 달성하는 최소 오차의 $\frac{1}{1-\gamma}$ 배 이내다. $\gamma$ 가 1에 가까우면 이 확장 계수가 커져 점근 성능 손실이 클 수 있다. 반면 TD는 분산이 훨씬 작아 더 빠르다.
-
-> **중요(on-policy 조건):** 이 수렴 결과들은 상태가 **on-policy 분포에 따라** 업데이트된다는 점에 결정적으로 의존한다. 다른 분포를 쓰면 함수 근사 부트스트래핑이 무한대로 **발산**할 수도 있다(Ch. 11). 이것이 이 코스가 "on-policy" prediction에 한정되는 이유다.
+Semi-gradient TD는 편향이 있어 장기적으로는 MC보다 덜 정확하지만, **초기 학습 속도**는 TD가 빠릅니다. 실용적인 상황에서 TD가 선호되는 이유입니다.
 
 ---
 
-## 모듈 종합 — 흐름 한 줄 요약
+## 핵심 개념 정리
 
-표 → 파라미터화된 함수($\hat{v}(s,\mathbf{w})$) → 목적함수 $\overline{VE}$ 정의 → SGD로 최소화 → MC는 진짜 경사·불편 목표(전역 최적) / TD는 준-경사·편향 목표(TD 고정점, 빠르지만 점근 오차 존재) → 선형 근사에서 둘 다 수렴 보장(단 on-policy 분포 하에서).
+### 수렴 특성 비교
 
-다음 모듈(Module 3)에서는 선형 근사의 성패를 좌우하는 **특징 $\mathbf{x}(s)$ 를 어떻게 구성할 것인가**(coarse coding, tile coding)와, 특징을 자동으로 학습하는 **비선형 근사(신경망)** 로 확장한다.
+| 방식 | 수렴 목표 | 편향 | 분산 |
+| :--- | :--- | :--- | :--- |
+| Gradient MC | $\overline{VE}$ 지역 최솟값 | 없음 (불편) | 큼 |
+| Semi-gradient TD | TD 고정점 ($\overline{VE}$ 최솟값 아님) | 있음 | 작음 |
+
+MC는 스텝 크기가 감소할 때 이론적으로 지역 최솟값으로 수렴합니다. 실제에서는 일정 스텝 크기를 쓰므로 최솟값 근처에서 진동합니다.
 
 ---
 
-## 개인 인사이트 / 캡스톤 연결
+### 1,000개 랜덤 워크 실험 결과
 
-**1. Course 2의 tabular 한계가 이번 모듈에서야 정리되었다.**
+실험 설계: 30 에피소드만 실행, 최적 $\alpha$를 각 알고리즘별로 탐색 (100개 값 테스트).
 
-Course 2 Phase 2 실험에서 8×8 그리드(64 상태)로 tabular Q-learning을 돌렸을 때는 표 하나로 충분했다. 당시에는 "상태가 많아지면 어떻게 하지"라는 의문을 잠깐 떠올리고 넘어갔는데, 이번 모듈에서 $\hat{v}(s, \mathbf{w})$ 라는 형태로 그 답이 명시적으로 정리되었다. 표가 단지 특징 벡터가 one-hot인 선형 근사의 특수 케이스라는 점(Exercise 9.1)을 알고 나니, 지금까지 배운 tabular 방법들이 별개의 기법이 아니라 같은 틀의 한쪽 끝이었다는 게 분명해졌다.
+| 알고리즘 | 최적 $\alpha$ | 초기 학습 속도 | 장기 정확도 |
+| :--- | :--- | :--- | :--- |
+| Semi-gradient TD | 0.22 | 빠름 | 상대적으로 낮음 |
+| Gradient MC | 0.01 | 느림 | 상대적으로 높음 |
 
-**2. 9·10주차 Cliff Walking 실험이 "TD 고정점 ≠ 전역 최적"으로 다시 설명된다.**
+30 에피소드 실험에서 TD가 더 낮은 오차에 도달했습니다.
 
-9·10주차에서 Q-learning이 이론적 최단 경로를 학습했지만 ε이 커질수록 실제 성능이 무너지는 것(ε=0.1에서 SARSA -26.11 vs Q-learning -56.29)을 "학습하는 것과 실행되는 것이 다르면 성능 보장이 안 된다"로 정리했었다. 이번 모듈의 TD 고정점 $\mathbf{w}_{TD} = \mathbf{A}^{-1}\mathbf{b}$ 와 오차 한계 $\overline{VE}(\mathbf{w}_{TD}) \le \frac{1}{1-\gamma}\min_\mathbf{w}\overline{VE}(\mathbf{w})$ 는, 함수 근사에서도 TD가 수렴하는 지점이 전역 최적과 다르다는 같은 결을 수식으로 보여준다. tabular Cliff Walking에서 직관으로 본 트레이드오프가 함수 근사 차원에서 정량적 한계로 다시 나타난 셈이다.
+> TD가 빠른 이유: 에피소드 중간마다 업데이트하므로 샘플 효율이 높고, 낮은 분산 덕에 더 큰 스텝 크기를 쓸 수 있습니다. 현실에서 점근적(asymptotic) 성능보다 초기 학습 속도가 더 중요한 경우가 많습니다.
 
-**3. 캡스톤 navigation의 연속 상태 공간에서는 표가 원천적으로 불가능하다.**
+---
 
-캡스톤으로 잡은 Isaac Lab navigation은 로봇 위치·속도·센서 관측이 모두 연속값이다. 교재가 든 "카메라 이미지의 경우의 수가 우주의 원자 수보다 많다"는 비유가 정확히 이 상황이고, tabular로는 접근 자체가 불가능하다. 이번 모듈은 캡스톤이 왜 함수 근사를 전제로 출발해야 하는지를 분명히 해준다 — 선택의 문제가 아니라 전제 조건이다.
+## 이전 내용과의 연결 / 다음으로 이어지는 흐름
 
-**4. $\overline{VE}$ 의 $\mu$ 가중은 중간보고서의 "보상 = 목적함수" 원칙과 닮았다.**
+MC와 TD의 실용적 트레이드오프를 확인했습니다. 다음 영상에서는 선형 함수 근사에 TD를 적용했을 때의 명시적 업데이트 규칙과, 테이블 TD가 특수 사례임을 수식으로 보입니다.
 
-$\overline{VE}(\mathbf{w}) = \sum_s \mu(s)[v_\pi(s) - \hat{v}(s,\mathbf{w})]^2$ 에서 $\mu(s)$ 가 "어떤 상태의 오차를 더 중요하게 볼지"를 정의하고, 그 선택이 최종 해의 형태를 바꾼다(Example 9.1의 편향된 그룹 추정값). 이는 중간보고서에서 도출한 MDP 설계 원칙 2번 "Reward는 목적함수와 직접 대응"과 구조적으로 같다. 목적함수에 무엇을 얼마나 반영하느냐가 학습 결과를 좌우한다는 점에서, 보상 설계와 $\overline{VE}$ 의 상태 가중은 같은 사고방식을 요구한다. 캡스톤 보상 설계 단계에서 이 관점을 그대로 가져갈 수 있을 것 같다.
+---
 
+### Linear TD
 
+---
+
+## 한 줄 요약
+
+선형 함수 근사에서 TD 업데이트를 구체화합니다. 그래디언트가 특징 벡터 $\mathbf{x}(s)$로 단순화되고, **테이블 TD는 선형 TD의 특수 사례**임을 수식으로 확인합니다.
+
+---
+
+## 핵심 개념 정리
+
+### 선형 TD 업데이트
+
+선형 근사에서 $\nabla \hat{v}(S_t, \mathbf{w}) = \mathbf{x}(S_t)$이므로:
+
+$$\mathbf{w} \leftarrow \mathbf{w} + \alpha \underbrace{\left[ R_{t+1} + \gamma \mathbf{x}(S_{t+1})^\top \mathbf{w} - \mathbf{x}(S_t)^\top \mathbf{w} \right]}_{\text{TD 오차}} \mathbf{x}(S_t)$$
+
+특징이 크면(big feature) 해당 가중치의 변화가 가치에 큰 영향을 줍니다. 특징이 0이면 해당 가중치는 이 업데이트에서 변하지 않습니다.
+
+---
+
+### 테이블 TD ⊂ 선형 TD
+
+테이블 방식에서는 상태 $s_i$에 대해 $x_i = 1$, 나머지 $= 0$. 이를 선형 TD에 대입하면:
+
+$$w_i \leftarrow w_i + \alpha \left[ R_{t+1} + \gamma w_j - w_i \right] \cdot 1$$
+
+이는 정확히 테이블 TD 업데이트와 같습니다. 마찬가지로 상태 집계 TD도 선형 TD의 특수 사례입니다.
+
+---
+
+### 선형 함수 근사가 중요한 이유
+
+- 수학적 분석이 용이합니다 (이론적 수렴 보장 범위가 넓음).
+- 도메인 전문 지식으로 좋은 특징을 설계할 수 있으면, 빠르게 좋은 성능을 냅니다.
+- 실제로 선형 TD + 좋은 특징 설계로 Atari 게임에서 인간 수준을 초과한 사례도 있습니다.
+
+---
+
+## 이전 내용과의 연결 / 다음으로 이어지는 흐름
+
+선형 TD의 구체적 업데이트를 유도했습니다. 다음 영상에서는 선형 TD가 정확히 어디로 수렴하는지, 즉 **TD 고정점(TD Fixed Point)**과 그 이론적 보장을 다룹니다.
+
+---
+
+### The TD Fixed Point
+
+---
+
+## 한 줄 요약
+
+선형 TD는 $\overline{VE}$ 최솟값이 아닌 **TD 고정점 $\mathbf{w}_{TD}$**로 수렴합니다. 이는 별도의 목적 함수(투영 벨만 오차)를 최소화한 해이며, $\overline{VE}$ 최솟값과의 거리는 수식으로 bound됩니다.
+
+---
+
+## 핵심 개념 정리
+
+### TD 고정점 유도
+
+기댓값 관점에서 선형 TD 업데이트를 분석하면:
+
+$$\mathbb{E}[\Delta \mathbf{w}] = \mathbf{b} - A\mathbf{w}$$
+
+여기서:
+- $A = \mathbb{E}\left[ \mathbf{x}(S_t) \left( \mathbf{x}(S_t) - \gamma \mathbf{x}(S_{t+1}) \right)^\top \right]$
+- $\mathbf{b} = \mathbb{E}\left[ R_{t+1} \mathbf{x}(S_t) \right]$
+
+수렴 조건: $\mathbf{b} - A\mathbf{w} = 0$ → TD 고정점:
+
+$$\mathbf{w}_{TD} = A^{-1}\mathbf{b}$$
+
+선형 TD는 이 고정점으로 수렴함이 증명되어 있습니다.
+
+---
+
+### TD 고정점 vs $\overline{VE}$ 최솟값
+
+TD 고정점은 **투영 벨만 오차(Projected Bellman Error)**를 최소화합니다. 이는 벨만 방정식을 함수 근사 공간에 투영한 해로, 테이블 TD가 벨만 방정식을 푸는 것의 함수 근사 버전입니다.
+
+TD 고정점과 $\overline{VE}$ 최솟값의 관계:
+
+$$\overline{VE}(\mathbf{w}_{TD}) \leq \frac{1}{1-\gamma} \min_{\mathbf{w}} \overline{VE}(\mathbf{w})$$
+
+- $\gamma \to 1$ : 오차 배율이 커져 TD 고정점이 나빠질 수 있음
+- $\gamma \to 0$ : TD 고정점 ≈ $\overline{VE}$ 최솟값
+- 특징이 충분히 좋아 가치 함수를 완벽히 표현할 수 있다면: 양쪽 모두 0이 되어 동일
+
+> 왜 TD 고정점이 $\overline{VE}$ 최솟값이 아닌가? 함수 근사로 인해 다음 상태 추정이 항상 부정확할 수 있고, TD는 이 부정확한 추정을 계속 타깃으로 사용합니다. 특징이 좋을수록 이 차이가 줄어듭니다.
+
+---
+
+## 비교 / 정리 표
+
+| 알고리즘 | 수렴 목표 | 보장 조건 | 부트스트랩 |
+| :--- | :--- | :--- | :--- |
+| Gradient MC | $\overline{VE}$ 지역 최솟값 | 불편 타깃, 스텝 크기 감소 | 없음 |
+| Semi-gradient TD (선형) | TD 고정점 | 선형 함수 근사 | 있음 |
+| Semi-gradient TD (비선형) | 수렴 미보장 | — | 있음 |
+
+---
+
+## 이전 내용과의 연결 / 다음으로 이어지는 흐름
+
+Module 2 전체를 통해 테이블 방식에서 함수 근사로의 전환을 완성했습니다.
+
+- **파라미터화된 함수** → **목적 함수 $\overline{VE}$** → **경사 하강법** → **Gradient MC** → **Semi-gradient TD** → **선형 TD** → **TD 고정점**
+
+Module 3에서는 특징 벡터 $\mathbf{x}(s)$를 **어떻게 설계할 것인가**를 다룹니다. Coarse Coding, 타일 코딩, 신경망 등 다양한 특징 구성 방법이 등장합니다.
