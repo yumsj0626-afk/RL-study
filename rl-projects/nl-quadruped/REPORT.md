@@ -60,6 +60,12 @@ Go2 locomotion 정책 (PPO velocity-tracking)              ← 제어 계층 (�
 즉 이 정책은 **(vx, vy, yaw_rate) 속도 명령을 받아 그대로 추종하도록 보상받은** 컨트롤러다. 우리 고수준
 컨트롤러의 출력이 정확히 이 3차원 명령이므로, 둘을 맞물리는 것이 통합의 핵심이었다.
 
+![Isaac Lab에서 다수의 Go2가 병렬로 보행 정책을 학습/실행하는 모습 (Phase 2)](results/go2_training.png)
+
+*Phase 2 — Isaac Lab에서 여러 Go2가 병렬 환경에서 동시에 속도추종 보행 정책을 수행하는 장면.
+초록 화살표는 각 로봇에 주어진 속도명령 시각화. PPO는 이처럼 수천 개의 병렬 환경에서 경험을 모아
+보행 정책을 학습한다 — 본 프로젝트는 이 정책을 학습시켜 freeze한 뒤 자연어 명령 수행에 사용했다.*
+
 ---
 
 ## 4. 해석 계층 (커스텀 구현)
@@ -79,6 +85,35 @@ Go2 locomotion 정책 (PPO velocity-tracking)              ← 제어 계층 (�
 목표가 불완전하면 시스템은 멈춘다. 5종을 증거 이미지와 함께 기록: `underspecified(goal=null)`,
 `goal_in_obstacle`, `start_in_obstacle`, `no_path`, `start_equals_goal`.
 (캡스톤에서 이 지점은 사용자 재질문 / 재계획 / 안전 모니터로 확장된다.)
+
+### 4.4 파서 실험 결과 (T01–T10)
+
+10개의 한국어 명령을 배치로 파싱(`run_parser_tests.py` → `results/parser_test_analysis.md`).
+**전부 스키마 검증 통과(`parse=ok`)**, 모호·불완전 표현까지 의도대로 해석됐다.
+
+| id | 명령 | goal | speed | pref | forb | soft |
+|---|---|---|---|---|---|---|
+| T01 | 오른쪽 위 구석으로 가 | [7.5, 7.5] | normal | default | 0 | 0 |
+| T02 | 오른쪽 위 구석으로 가되 중앙은 절대 피해서 천천히 | [7.5, 7.5] | slow | default | 1 | 0 |
+| T03 | (6,6)까지 안전하게 가, (3,3) 근처는 위험해 | [6.0, 6.0] | normal | safe | 0 | 1 |
+| T04 | 빠르게 가 | **null** | fast | shortest | 0 | 0 |
+| T05 | 왼쪽 위 구석으로 최대한 빨리 | [0.5, 7.5] | fast | shortest | 0 | 0 |
+| T06 | 가운데로 가 | [4.0, 4.0] | normal | default | 0 | 0 |
+| T07 | 오른쪽 아래 구석까지 가는데 중앙 구역은 조심해서 돌아가 | [7.5, 0.5] | normal | safe | 0 | 1 |
+| T08 | (2,7)에서 출발해서 왼쪽 아래 구석까지 천천히 안전하게 | [0.5, 0.5] | slow | safe | 0 | 0 |
+| T09 | 장애물 없이 목표까지 | **null** | normal | default | 0 | 0 |
+| T10 | 왼쪽 벽은 절대 붙지 말고 오른쪽 끝 가운데로 가 | [7.5, 4.0] | normal | default | 1 | 0 |
+
+이 결과가 보여주는 것:
+- **공간 표현의 좌표화**: 구석/가운데/명시 좌표/출발점을 일관되게 변환 (T01·T05·T06·T08·T10).
+  T08은 "(2,7)에서 출발"을 `start=[2,7]`로, "왼쪽 아래 구석"을 goal로 분리 해석.
+- **hard vs soft 구분**: "절대 피해"·"벽 붙지 마"는 `forbidden_regions`(+clearance 0.3~0.5)로(T02·T10),
+  "위험해"·"조심해서 돌아가"는 `soft_avoid_regions` + `preference=safe`로(T03·T07) — 동역학 제약과
+  보상 제약을 자연어 어감에 따라 다르게 매핑.
+- **속도·선호 부사**: 천천히→slow, 최대한 빨리→fast+shortest, 안전하게/조심→safe.
+- **불완전 명령의 안전한 실패**: 목표가 없으면(T04 "빠르게 가", T09 "장애물 없이 목표까지")
+  **목표를 지어내지 않고 `goal=null`** 반환 → 이후 계획 단계에서 통제된 실패로 이어짐.
+  정찰 프로젝트의 핵심 교훈("hallucinated goal보다 controlled failure가 낫다")을 그대로 계승.
 
 ---
 
@@ -105,11 +140,45 @@ env·체크포인트 로딩은 검증된 원본 경로를 그대로 둬 트러�
 
 ## 6. 결과 / 증거
 
-### 6.1 고수준 파이프라인 (2D 목업, GPU 불필요)
-`run_experiments.py`로 오프라인 회귀 검증. 충돌 0·우회·실패처리 모두 확인.
-- `results/preview_center_block.png` — 중앙 금지 박스를 우회해 목표 도달
-- `results/preview_safe_detour.png` — `preference=safe`가 soft 위험원을 실제로 우회
-- `results/preview_fail_*.png` — 5종 실패의 증거 이미지
+### 6.1 고수준 파이프라인 (2D 목업, GPU 불필요, 비용 0)
+
+`run_experiments.py`로 7개 spec을 plan→simulate→render까지 **결정론적으로** 검증
+(`results/all_experiments.json`). 성공 케이스는 모두 forbidden **충돌 0**, 실패 케이스는 모두
+**계획 단계에서 통제된 중단**. 핵심 불변식은 assert로 잠가 회귀를 방지한다.
+
+| spec | 의도 | 결과 | waypoint | 경로(m) | 충돌 |
+|---|---|---|---|---|---|
+| center_block | 중앙 금지박스 회피 + 우상단 도달(천천히) | ✅ goal reached | 3 | 10.58 | 0 |
+| safe_detour | (6,6)까지 안전하게, (3,3) 위험원 회피 | ✅ goal reached | 6 | 8.20 | 0 |
+| underspecified | "빠르게 가" (목표 없음) | ⛔ planning_failed | — | — | — |
+| fail_goal_in_obstacle | 목표가 금지영역 내부 | ⛔ planning_failed | — | — | — |
+| fail_start_in_obstacle | 시작이 금지영역 내부 | ⛔ planning_failed | — | — | — |
+| fail_no_path | 벽이 시작·목표를 분리 | ⛔ planning_failed | — | — | — |
+| fail_start_equals_goal | 시작 == 목표 | ⛔ planning_failed | — | — | — |
+
+**(1) 하드 장애물 회피** — `center_block` ([preview](results/preview_center_block.png)): 중앙
+[3,3]~[5,5] 금지 박스를 (로봇 반경+clearance만큼 팽창시킨 뒤) 좌상단으로 우회. waypoint 3개로
+효율적 경로, 최종 궤적의 forbidden 진입 **0회**.
+
+**(2) 소프트 의도의 실효성** — `safe_detour` ([preview](results/preview_safe_detour.png)):
+`preference=safe`일 때 (3,3) 위험원을 **실제로 우회**(waypoint 2→6, 경로 8.20m). 초기 구현은
+line-of-sight 단순화가 soft 영역을 무시해 직선으로 관통했으나, safe일 때 단순화에서도 soft를 회피
+대상에 포함하도록 수정해 해결. → **"안전하게"가 말뿐이 아니라 경로 차이로 드러남.**
+(정찰 프로젝트에선 soft 대상이 비어 효과가 없었던 한계를, 여기선 구체 위험영역으로 분해해 개선.)
+
+**(3) 통제된 실패 5종** — `results/failure_taxonomy.md`, `preview_fail_*.png`. 목표를 지어내지 않고
+계획 단계에서 안전하게 멈추며, 각 케이스의 메시지를 분리 기록:
+
+| 실패 케이스 | 메시지 |
+|---|---|
+| underspecified | Goal is underspecified (goal=null) |
+| fail_goal_in_obstacle | Goal (4.0, 4.0) is inside an inflated forbidden region |
+| fail_start_in_obstacle | Start (4.0, 4.0) is inside an inflated forbidden region |
+| fail_no_path | No collision-free path from start to goal |
+| fail_start_equals_goal | Start equals goal |
+
+이 2D 검증으로 **두뇌(파싱·계획·제어)를 GPU 없이 먼저 확정**한 뒤 Isaac 통합에 들어갔고,
+Isaac 측 커스텀 코드를 "속도명령 주입 래퍼 1개"로 최소화할 수 있었다.
 
 ### 6.2 Isaac Sim 보행 + 자연어 명령 수행 (핵심 시연)
 freeze된 Go2 정책이 go-to-goal 명령을 받아 목표 좌표까지 보행. 실제 실행 로그:
@@ -125,8 +194,8 @@ freeze된 Go2 정책이 go-to-goal 명령을 받아 목표 좌표까지 보행. 
 도착 후 명령 `(0,0,0)`으로 정지, `gravz=−1`(직립 유지). 거리 단조 감소 = 정확한 조향.
 - 영상: `go2_goto_3_3.mp4` (좌표 목표), `go2_nl_corner.mp4` ("오른쪽 위 구석으로 가" 자연어 명령)
 
-![Go2가 자연어 명령을 수행하고 목표에 도착한 순간 (Isaac Sim)](results/isaac_arrival.png)
-
+![Go2가 자연어 명령을 수행하고 목표에 도착한 순간 (Isaac Sim)]
+![alt text](image.png)
 *Isaac Sim 평지 환경에서 Unitree Go2가 "오른쪽 위 구석으로 가" 명령을 수행하고 정지한 순간.
 중앙의 초록/파랑 화살표는 Isaac Lab의 속도명령 시각화(초록=현재 속도, 파랑=지령 속도)로,
 도착해 정지하여 거의 0이다. 이는 본 시스템이 주입하는 `(vx, vy, yaw_rate)` 명령이 실제로
@@ -134,7 +203,48 @@ freeze된 Go2 정책이 go-to-goal 명령을 받아 목표 좌표까지 보행. 
 
 ---
 
-## 7. 한계 및 향후 과제
+## 7. 진행 과정 (Phase 0–4)
+
+비용·리스크 통제를 위해 **GPU 없이 되는 부분을 먼저 로컬에서 끝내고**, GPU는 보행 학습·렌더링에만 썼다.
+
+### Phase 0 — 로컬 두뇌 구현·검증 (GPU 0, 비용 0)
+- command schema v2 설계, 파서 v2(프롬프트+OpenAI 호환 게이트웨이), A* 플래너, go-to-goal 컨트롤러,
+  matplotlib 2D 목업 구현.
+- 파서 배치 테스트(T01–T10)와 오프라인 기하 회귀(7 spec, 통제된 실패 5종)로 두뇌 로직을 전부 검증(§4.4, §6.1).
+- 산출물: `nl_parser.py`·`planner.py`·`controller.py`·`preview_2d.py`·`run_experiments.py`·
+  `run_parser_tests.py`, 예제 spec, 결과 그림.
+
+### Phase 1 — AWS GPU 환경 구축
+- GPU 인스턴스 vCPU 쿼터 증액 요청.
+- 인프라는 직접 Terraform 작성 대신 **NVIDIA 공식 Isaac Automator** 채택(내부적으로 Terraform+Ansible) —
+  "시간 부족·트러블슈팅 최소화·오픈소스 최대 활용" 원칙에 따른 결정.
+- `g5.2xlarge`(A10G 24GB)·`us-east-1` 배포. 진행 중 만난 이슈: 신규 계정의 Free 플랜 제한으로
+  GPU 인스턴스 거부 → **Paid 플랜 전환**으로 해결, 보안그룹 ingress를 `myip`로 제한.
+- `./stop`/`./destroy`로 작업할 때만 과금(총 GPU 비용 수십 달러 규모). 절차는 `docs/01_phase1_isaac_automator.md`.
+
+### Phase 2 — Go2 보행 정책 학습 (제어 계층)
+- Isaac Lab 스톡 태스크 `Isaac-Velocity-Flat-Unitree-Go2-v0`를 **rsl_rl PPO로 직접 학습**(체크포인트 `model_499.pt`).
+- `play --video`로 보행 + 헤드리스 녹화 검증. 이 과정에서 정책 인터페이스(관측 48 / 행동 12 / 보상 10항목,
+  명령 = `velocity_commands` 3차원)를 파악해 **Phase 3 통합 지점을 확정**(§3).
+- 스톡 태스크·기본 config를 그대로 써서 버전 호환 디버깅을 회피. 절차는 `docs/02_phase2_go2_locomotion.md`.
+![alt text](image-1.png)
+
+### Phase 3 — 자연어 → 정책 통합
+- `isaac/nlq_play.py`(공식 `play.py` 복제 + NLQ 훅)로 NL → go-to-goal → velocity command를 정책에 주입(§5).
+- 통합 디버깅 3종 해결: ① 명령 주입 위치(command manager 버퍼) ② 헤딩 추출 버그(공식 `euler_xyz_from_quat`)
+  ③ 제자리 회전 회피(forward-steering).
+- 결과: 로봇이 목표 좌표까지 보행 후 정지(`goal reached`). **좌표 목표 + 자연어 명령** 둘 다 성공.
+
+### Phase 4 — 시연 · 보고서
+- 단일 인상 시연 렌더: 좌표 목표(`go2_goto_3_3`)와 자연어 명령(`go2_nl_corner`, "오른쪽 위 구석으로 가")
+  보행 영상, 도착 스크린샷, dist 수렴 로그(§6.2).
+- spec별 `interpretation_*.md`·`failure_taxonomy.md` 자동 생성으로 증거를 정리하고 본 보고서를 작성.
+- 목표 시각 마커는 이 빌드의 Fabric 렌더 제약(sim play 이후 추가한 prim 미렌더)으로 생략 —
+  도착은 dist 로그와 2D 그림으로 입증.
+
+---
+
+## 8. 한계 및 향후 과제
 
 - **보행 정책 학습량**: 데모용으로 ~500 iteration 짧게 학습. 더 학습하면 보행 품질·강건성 향상.
 - **Isaac 씬 장애물**: 시간 제약상 Isaac 씬에 장애물 prim을 직접 배치하지 않음. 고수준 장애물 회피는
@@ -146,7 +256,7 @@ freeze된 Go2 정책이 go-to-goal 명령을 받아 목표 좌표까지 보행. 
 
 ---
 
-## 8. 실행 환경 / 재현
+## 9. 실행 환경 / 재현
 
 - **시뮬레이터**: Isaac Sim 6.0 + Isaac Lab 3.0-beta2, 로봇 Unitree Go2.
 - **컴퓨팅**: AWS EC2 `g5.2xlarge` (NVIDIA A10G 24GB), us-east-1. NVIDIA 공식 **Isaac Automator**로

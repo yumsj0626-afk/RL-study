@@ -143,6 +143,16 @@ nl-quadruped/
 | `fail_no_path` | 시작·목표가 장애물로 분리 | No collision-free path from start to goal |
 | `fail_start_equals_goal` | 시작 == 목표 | Start equals goal |
 
+## 실험 결과 요약 (2D, GPU 0)
+
+- **파서 (T01–T10)**: 한국어 명령 10종 **전부 스키마 검증 통과**. 공간표현 좌표화, hard/soft 구분,
+  속도·선호 부사 해석, 불완전 명령 시 `goal=null`(목표 미생성)까지 의도대로 처리.
+  → `results/parser_test_analysis.md`
+- **기하 회귀 (7 spec)**: 성공 2종(하드 회피·소프트 우회, **충돌 0**) + 통제된 실패 5종.
+  `preference=safe`일 때 위험원을 실제로 우회(waypoint 2→6, 경로 차이로 입증).
+  → `results/all_experiments.json`, `results/preview_*.png`
+- **전체 수치·분석·증거 그림**은 [REPORT.md](REPORT.md) 의 4.4 / 6.1 절 참고.
+
 ## 파서 모델 / 게이트웨이
 
 `nl_parser` 는 OpenAI 호환 클라이언트를 쓴다. `.env` 로 모델/엔드포인트를 바꿀 수 있다:
