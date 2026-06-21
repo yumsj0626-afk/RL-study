@@ -1,0 +1,18 @@
+{
+  "world_size": [
+    8.0,
+    8.0
+  ],
+  "start": [
+    0.5,
+    0.5
+  ],
+  "goal": null,
+  "goal_yaw": null,
+  "forbidden_regions": [],
+  "soft_avoid_regions": [],
+  "clearance": 0.0,
+  "speed": "fast",
+  "preference": "shortest",
+  "interpretation_notes": "'빠르게 가' — 목표 미명시라 goal=null (controlled failure)"
+}

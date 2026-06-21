@@ -1,0 +1,30 @@
+{
+  "world_size": [
+    8.0,
+    8.0
+  ],
+  "start": [
+    0.5,
+    0.5
+  ],
+  "goal": [
+    6.0,
+    6.0
+  ],
+  "goal_yaw": null,
+  "forbidden_regions": [],
+  "soft_avoid_regions": [
+    {
+      "type": "circle",
+      "center": [
+        3.0,
+        3.0
+      ],
+      "radius": 1.0
+    }
+  ],
+  "clearance": 0.0,
+  "speed": "normal",
+  "preference": "safe",
+  "interpretation_notes": "'안전하게'는 preference=safe, '(3,3) 근처 위험'은 반경1 원형 soft_avoid"
+}

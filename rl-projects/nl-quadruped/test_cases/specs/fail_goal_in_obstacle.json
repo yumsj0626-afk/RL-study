@@ -1,0 +1,12 @@
+{
+  "world_size": [8.0, 8.0],
+  "start": [0.5, 0.5],
+  "goal": [4.0, 4.0],
+  "goal_yaw": null,
+  "forbidden_regions": [{"type": "box", "min": [3.0, 3.0], "max": [5.0, 5.0]}],
+  "soft_avoid_regions": [],
+  "clearance": 0.0,
+  "speed": "normal",
+  "preference": "default",
+  "interpretation_notes": "목표 [4,4]가 금지 박스 [3,3]~[5,5] 안에 있음 — 도달 불가, 계획 단계에서 거부되어야 함"
+}

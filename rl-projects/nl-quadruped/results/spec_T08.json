@@ -1,0 +1,21 @@
+{
+  "world_size": [
+    8.0,
+    8.0
+  ],
+  "start": [
+    2.0,
+    7.0
+  ],
+  "goal": [
+    0.5,
+    0.5
+  ],
+  "goal_yaw": null,
+  "forbidden_regions": [],
+  "soft_avoid_regions": [],
+  "clearance": 0.0,
+  "speed": "slow",
+  "preference": "safe",
+  "interpretation_notes": "출발점을 [2.0,7.0]으로 해석, '왼쪽 아래 구석'을 [0.5,0.5]로 해석, '천천히'는 speed=slow, '안전하게'는 preference=safe"
+}

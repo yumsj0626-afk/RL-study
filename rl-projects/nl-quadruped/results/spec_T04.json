@@ -1,0 +1,18 @@
+{
+  "world_size": [
+    8.0,
+    8.0
+  ],
+  "start": [
+    0.5,
+    0.5
+  ],
+  "goal": null,
+  "goal_yaw": null,
+  "forbidden_regions": [],
+  "soft_avoid_regions": [],
+  "clearance": 0.0,
+  "speed": "fast",
+  "preference": "shortest",
+  "interpretation_notes": "'빠르게'는 speed=fast, preference=shortest로 해석. 목표 위치가 명시되지 않아 goal=null로 설정"
+}

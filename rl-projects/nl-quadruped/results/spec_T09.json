@@ -1,0 +1,18 @@
+{
+  "world_size": [
+    8.0,
+    8.0
+  ],
+  "start": [
+    0.5,
+    0.5
+  ],
+  "goal": null,
+  "goal_yaw": null,
+  "forbidden_regions": [],
+  "soft_avoid_regions": [],
+  "clearance": 0.0,
+  "speed": "normal",
+  "preference": "default",
+  "interpretation_notes": "'장애물 없이'는 장애물이 없는 상황을 의미하므로 forbidden_regions 없음. '목표까지'라고 했으나 구체적인 목표 위치가 명시되지 않아 goal=null로 설정. 목표 좌표를 추가로 지정해야 함."
+}

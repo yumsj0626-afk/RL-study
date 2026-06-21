@@ -1,0 +1,33 @@
+{
+  "world_size": [
+    8.0,
+    8.0
+  ],
+  "start": [
+    0.5,
+    0.5
+  ],
+  "goal": [
+    7.5,
+    0.5
+  ],
+  "goal_yaw": null,
+  "forbidden_regions": [],
+  "soft_avoid_regions": [
+    {
+      "type": "box",
+      "min": [
+        3.0,
+        3.0
+      ],
+      "max": [
+        5.0,
+        5.0
+      ]
+    }
+  ],
+  "clearance": 0.0,
+  "speed": "normal",
+  "preference": "safe",
+  "interpretation_notes": "'오른쪽 아래 구석'을 [7.5,0.5]로 해석. '중앙 구역 조심해서 돌아가'는 중앙을 [3,3]~[5,5] 박스로 보고 soft_avoid_regions에 추가, '조심해서'는 preference=safe로 해석"
+}

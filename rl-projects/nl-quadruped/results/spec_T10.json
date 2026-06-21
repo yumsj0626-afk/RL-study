@@ -1,0 +1,33 @@
+{
+  "world_size": [
+    8.0,
+    8.0
+  ],
+  "start": [
+    0.5,
+    0.5
+  ],
+  "goal": [
+    7.5,
+    4.0
+  ],
+  "goal_yaw": null,
+  "forbidden_regions": [
+    {
+      "type": "box",
+      "min": [
+        0.0,
+        0.0
+      ],
+      "max": [
+        0.5,
+        8.0
+      ]
+    }
+  ],
+  "soft_avoid_regions": [],
+  "clearance": 0.5,
+  "speed": "normal",
+  "preference": "default",
+  "interpretation_notes": "'오른쪽 끝 가운데'는 x=7.5(오른쪽 끝), y=4.0(세로 중앙)인 [7.5,4.0]으로 해석. '왼쪽 벽은 절대 붙지 말고'는 왼쪽 벽(x=0) 근처를 forbidden_region으로 처리하여 x=0~0.5 구간을 금지 박스로 설정. clearance=0.5로 벽 여유 확보."
+}

@@ -1,0 +1,33 @@
+{
+  "world_size": [
+    8.0,
+    8.0
+  ],
+  "start": [
+    0.5,
+    0.5
+  ],
+  "goal": [
+    7.5,
+    7.5
+  ],
+  "goal_yaw": null,
+  "forbidden_regions": [
+    {
+      "type": "box",
+      "min": [
+        3.0,
+        3.0
+      ],
+      "max": [
+        5.0,
+        5.0
+      ]
+    }
+  ],
+  "soft_avoid_regions": [],
+  "clearance": 0.3,
+  "speed": "slow",
+  "preference": "default",
+  "interpretation_notes": "오른쪽 위 구석을 [7.5,7.5]로 해석. 중앙을 [3,3]~[5,5] 박스로 보고 '절대 피해'는 forbidden_region으로 처리, clearance=0.3 적용. '천천히'는 speed=slow"
+}

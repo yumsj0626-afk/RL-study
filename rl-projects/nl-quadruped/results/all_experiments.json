@@ -1,0 +1,76 @@
+[
+  {
+    "name": "center_block",
+    "stage": "control",
+    "notes": "오른쪽 위 구석으로 가되 중앙 [3,3]~[5,5] 박스는 절대 회피, 천천히",
+    "success": true,
+    "reason": "goal reached",
+    "waypoints": 3,
+    "collisions": 0,
+    "path_len": 10.58,
+    "speed": "slow",
+    "preference": "default"
+  },
+  {
+    "name": "fail_goal_in_obstacle",
+    "stage": "planning_failed",
+    "notes": "목표 [4,4]가 금지 박스 [3,3]~[5,5] 안에 있음 — 도달 불가, 계획 단계에서 거부되어야 함",
+    "success": false,
+    "reason": "Goal (4.0, 4.0) is inside an inflated forbidden region",
+    "waypoints": 0,
+    "collisions": 0,
+    "path_len": 0.0
+  },
+  {
+    "name": "fail_no_path",
+    "stage": "planning_failed",
+    "notes": "폭 전체를 가로지르는 벽 — 시작과 목표가 분리되어 충돌 없는 경로 없음",
+    "success": false,
+    "reason": "No collision-free path from start to goal",
+    "waypoints": 0,
+    "collisions": 0,
+    "path_len": 0.0
+  },
+  {
+    "name": "fail_start_equals_goal",
+    "stage": "planning_failed",
+    "notes": "시작과 목표가 동일 — 이동 불필요, 계획 단계에서 거부되어야 함",
+    "success": false,
+    "reason": "Start equals goal",
+    "waypoints": 0,
+    "collisions": 0,
+    "path_len": 0.0
+  },
+  {
+    "name": "fail_start_in_obstacle",
+    "stage": "planning_failed",
+    "notes": "시작 [4,4]가 금지 박스 안 — 출발부터 충돌 상태, 계획 단계에서 거부되어야 함",
+    "success": false,
+    "reason": "Start (4.0, 4.0) is inside an inflated forbidden region",
+    "waypoints": 0,
+    "collisions": 0,
+    "path_len": 0.0
+  },
+  {
+    "name": "safe_detour",
+    "stage": "control",
+    "notes": "(6,6)까지 안전하게, (3,3) 근처(반경1.5)는 위험해서 soft 회피",
+    "success": true,
+    "reason": "goal reached",
+    "waypoints": 6,
+    "collisions": 0,
+    "path_len": 8.2,
+    "speed": "normal",
+    "preference": "safe"
+  },
+  {
+    "name": "underspecified",
+    "stage": "planning_failed",
+    "notes": "'빠르게 가' — 목표 미명시라 goal=null (controlled failure)",
+    "success": false,
+    "reason": "Goal is underspecified (goal=null)",
+    "waypoints": 0,
+    "collisions": 0,
+    "path_len": 0.0
+  }
+]

@@ -1,0 +1,146 @@
+[
+  {
+    "id": "T01",
+    "command": "오른쪽 위 구석으로 가",
+    "expected": "clear",
+    "parse": "ok",
+    "goal": [
+      7.5,
+      7.5
+    ],
+    "speed": "normal",
+    "preference": "default",
+    "n_forbidden": 0,
+    "n_soft": 0,
+    "notes": "오른쪽 위 구석을 [7.5,7.5]로 해석"
+  },
+  {
+    "id": "T02",
+    "command": "오른쪽 위 구석으로 가되 중앙은 절대 피해서 천천히",
+    "expected": "clear_hard_slow",
+    "parse": "ok",
+    "goal": [
+      7.5,
+      7.5
+    ],
+    "speed": "slow",
+    "preference": "default",
+    "n_forbidden": 1,
+    "n_soft": 0,
+    "notes": "오른쪽 위 구석을 [7.5,7.5]로 해석. 중앙을 [3,3]~[5,5] 박스로 보고 '절대 피해'는 forbidden_region으로 처리, clearance=0.3 적용. '천천히'는 speed=slow"
+  },
+  {
+    "id": "T03",
+    "command": "(6,6)까지 안전하게 가, (3,3) 근처는 위험해",
+    "expected": "soft_safe",
+    "parse": "ok",
+    "goal": [
+      6.0,
+      6.0
+    ],
+    "speed": "normal",
+    "preference": "safe",
+    "n_forbidden": 0,
+    "n_soft": 1,
+    "notes": "'안전하게'는 preference=safe, '(3,3) 근처 위험'은 반경1 원형 soft_avoid"
+  },
+  {
+    "id": "T04",
+    "command": "빠르게 가",
+    "expected": "underspecified",
+    "parse": "ok",
+    "goal": null,
+    "speed": "fast",
+    "preference": "shortest",
+    "n_forbidden": 0,
+    "n_soft": 0,
+    "notes": "'빠르게'는 speed=fast, preference=shortest로 해석. 목표 위치가 명시되지 않아 goal=null로 설정"
+  },
+  {
+    "id": "T05",
+    "command": "왼쪽 위 구석으로 최대한 빨리",
+    "expected": "clear_fast",
+    "parse": "ok",
+    "goal": [
+      0.5,
+      7.5
+    ],
+    "speed": "fast",
+    "preference": "shortest",
+    "n_forbidden": 0,
+    "n_soft": 0,
+    "notes": "'왼쪽 위 구석'을 [0.5,7.5]로 해석, '최대한 빨리'는 speed=fast 및 preference=shortest로 해석"
+  },
+  {
+    "id": "T06",
+    "command": "가운데로 가",
+    "expected": "ambiguous_center",
+    "parse": "ok",
+    "goal": [
+      4.0,
+      4.0
+    ],
+    "speed": "normal",
+    "preference": "default",
+    "n_forbidden": 0,
+    "n_soft": 0,
+    "notes": "'가운데'를 중앙 [4.0,4.0]으로 해석"
+  },
+  {
+    "id": "T07",
+    "command": "오른쪽 아래 구석까지 가는데 중앙 구역은 조심해서 돌아가",
+    "expected": "soft_safe",
+    "parse": "ok",
+    "goal": [
+      7.5,
+      0.5
+    ],
+    "speed": "normal",
+    "preference": "safe",
+    "n_forbidden": 0,
+    "n_soft": 1,
+    "notes": "'오른쪽 아래 구석'을 [7.5,0.5]로 해석. '중앙 구역 조심해서 돌아가'는 중앙을 [3,3]~[5,5] 박스로 보고 soft_avoid_regions에 추가, '조심해서'는 preference=safe로 해석"
+  },
+  {
+    "id": "T08",
+    "command": "(2,7)에서 출발해서 왼쪽 아래 구석까지 천천히 안전하게",
+    "expected": "clear_start_slow_safe",
+    "parse": "ok",
+    "goal": [
+      0.5,
+      0.5
+    ],
+    "speed": "slow",
+    "preference": "safe",
+    "n_forbidden": 0,
+    "n_soft": 0,
+    "notes": "출발점을 [2.0,7.0]으로 해석, '왼쪽 아래 구석'을 [0.5,0.5]로 해석, '천천히'는 speed=slow, '안전하게'는 preference=safe"
+  },
+  {
+    "id": "T09",
+    "command": "장애물 없이 목표까지",
+    "expected": "underspecified",
+    "parse": "ok",
+    "goal": null,
+    "speed": "normal",
+    "preference": "default",
+    "n_forbidden": 0,
+    "n_soft": 0,
+    "notes": "'장애물 없이'는 장애물이 없는 상황을 의미하므로 forbidden_regions 없음. '목표까지'라고 했으나 구체적인 목표 위치가 명시되지 않아 goal=null로 설정. 목표 좌표를 추가로 지정해야 함."
+  },
+  {
+    "id": "T10",
+    "command": "왼쪽 벽은 절대 붙지 말고 오른쪽 끝 가운데로 가",
+    "expected": "clear_hard",
+    "parse": "ok",
+    "goal": [
+      7.5,
+      4.0
+    ],
+    "speed": "normal",
+    "preference": "default",
+    "n_forbidden": 1,
+    "n_soft": 0,
+    "notes": "'오른쪽 끝 가운데'는 x=7.5(오른쪽 끝), y=4.0(세로 중앙)인 [7.5,4.0]으로 해석. '왼쪽 벽은 절대 붙지 말고'는 왼쪽 벽(x=0) 근처를 forbidden_region으로 처리하여 x=0~0.5 구간을 금지 박스로 설정. clearance=0.5로 벽 여유 확보."
+  }
+]

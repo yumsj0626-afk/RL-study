@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NL Quadruped Navigation Command Schema v2",
+  "description": "Continuous 2D world (meters). x=east(right), y=north(up), origin [0,0] at bottom-left.",
+  "type": "object",
+  "required": ["goal", "world_size"],
+  "additionalProperties": false,
+  "definitions": {
+    "region": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "min", "max"],
+          "additionalProperties": false,
+          "properties": {
+            "type": {"const": "box"},
+            "min": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+            "max": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "center", "radius"],
+          "additionalProperties": false,
+          "properties": {
+            "type": {"const": "circle"},
+            "center": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+            "radius": {"type": "number", "exclusiveMinimum": 0}
+          }
+        }
+      ]
+    }
+  },
+  "properties": {
+    "world_size": {
+      "type": "array",
+      "items": {"type": "number", "exclusiveMinimum": 0},
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "[x_size, y_size] arena dimensions in meters."
+    },
+    "start": {
+      "type": "array",
+      "items": {"type": "number"},
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "Start position [x, y] in meters. Defaults to [0.5, 0.5]."
+    },
+    "goal": {
+      "oneOf": [
+        {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+        {"type": "null"}
+      ],
+      "description": "Goal position [x, y] in meters, or null when no goal can be inferred."
+    },
+    "goal_yaw": {
+      "oneOf": [{"type": "number"}, {"type": "null"}],
+      "description": "Optional desired heading at goal in radians, or null."
+    },
+    "forbidden_regions": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/region"},
+      "description": "Hard obstacles the robot must not enter (collision-level)."
+    },
+    "soft_avoid_regions": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/region"},
+      "description": "Soft regions: passable but penalized when preference=safe."
+    },
+    "clearance": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Extra safety margin (m) to keep from forbidden regions. Default 0."
+    },
+    "speed": {
+      "type": "string",
+      "enum": ["slow", "normal", "fast"],
+      "description": "Maps to forward velocity command magnitude. Default normal."
+    },
+    "preference": {
+      "type": "string",
+      "enum": ["shortest", "safe", "default"],
+      "description": "shortest: minimize path length; safe: also avoid soft regions; default: no extra shaping."
+    },
+    "interpretation_notes": {
+      "type": "string",
+      "description": "Short report of how ambiguous language was interpreted."
+    }
+  }
+}

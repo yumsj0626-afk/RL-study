@@ -1,0 +1,21 @@
+{
+  "world_size": [
+    8.0,
+    8.0
+  ],
+  "start": [
+    0.5,
+    0.5
+  ],
+  "goal": [
+    4.0,
+    4.0
+  ],
+  "goal_yaw": null,
+  "forbidden_regions": [],
+  "soft_avoid_regions": [],
+  "clearance": 0.0,
+  "speed": "normal",
+  "preference": "default",
+  "interpretation_notes": "'가운데'를 중앙 [4.0,4.0]으로 해석"
+}

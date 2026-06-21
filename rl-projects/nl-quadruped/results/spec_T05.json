@@ -1,0 +1,21 @@
+{
+  "world_size": [
+    8.0,
+    8.0
+  ],
+  "start": [
+    0.5,
+    0.5
+  ],
+  "goal": [
+    0.5,
+    7.5
+  ],
+  "goal_yaw": null,
+  "forbidden_regions": [],
+  "soft_avoid_regions": [],
+  "clearance": 0.0,
+  "speed": "fast",
+  "preference": "shortest",
+  "interpretation_notes": "'왼쪽 위 구석'을 [0.5,7.5]로 해석, '최대한 빨리'는 speed=fast 및 preference=shortest로 해석"
+}

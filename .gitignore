@@ -1,0 +1,39 @@
+# ---- Secrets (절대 커밋 금지) ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+**/credentials
+aws.json
+
+# ---- Terraform ----
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+.terraform.lock.hcl
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+# ---- 대용량 산출물 (S3/로컬에만, git에는 X) ----
+*.mp4
+*.mov
+*.usd
+*.usdc
+*.ckpt
+*.pt
+*.pth
+
+# ---- OS ----
+.DS_Store
+Thumbs.db

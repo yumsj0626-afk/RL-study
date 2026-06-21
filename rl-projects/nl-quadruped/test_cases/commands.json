@@ -1,0 +1,12 @@
+[
+  {"id": "T01", "command": "오른쪽 위 구석으로 가", "expected": "clear"},
+  {"id": "T02", "command": "오른쪽 위 구석으로 가되 중앙은 절대 피해서 천천히", "expected": "clear_hard_slow"},
+  {"id": "T03", "command": "(6,6)까지 안전하게 가, (3,3) 근처는 위험해", "expected": "soft_safe"},
+  {"id": "T04", "command": "빠르게 가", "expected": "underspecified"},
+  {"id": "T05", "command": "왼쪽 위 구석으로 최대한 빨리", "expected": "clear_fast"},
+  {"id": "T06", "command": "가운데로 가", "expected": "ambiguous_center"},
+  {"id": "T07", "command": "오른쪽 아래 구석까지 가는데 중앙 구역은 조심해서 돌아가", "expected": "soft_safe"},
+  {"id": "T08", "command": "(2,7)에서 출발해서 왼쪽 아래 구석까지 천천히 안전하게", "expected": "clear_start_slow_safe"},
+  {"id": "T09", "command": "장애물 없이 목표까지", "expected": "underspecified"},
+  {"id": "T10", "command": "왼쪽 벽은 절대 붙지 말고 오른쪽 끝 가운데로 가", "expected": "clear_hard"}
+]

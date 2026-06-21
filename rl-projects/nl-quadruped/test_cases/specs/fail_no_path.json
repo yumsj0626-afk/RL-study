@@ -1,0 +1,12 @@
+{
+  "world_size": [8.0, 8.0],
+  "start": [0.5, 0.5],
+  "goal": [7.5, 7.5],
+  "goal_yaw": null,
+  "forbidden_regions": [{"type": "box", "min": [0.0, 3.8], "max": [8.0, 4.2]}],
+  "soft_avoid_regions": [],
+  "clearance": 0.0,
+  "speed": "normal",
+  "preference": "default",
+  "interpretation_notes": "폭 전체를 가로지르는 벽 — 시작과 목표가 분리되어 충돌 없는 경로 없음"
+}
